@@ -66,7 +66,7 @@ export default function Navbar() {
             src="/assets/logo/main-logo.svg"
             alt="Posa Rosa"
             style={{
-              height: '42px',
+              height: '105px',
               width: 'auto',
               filter: scrolled ? 'none' : 'brightness(0) invert(1)',
               transition: 'filter 0.45s ease',

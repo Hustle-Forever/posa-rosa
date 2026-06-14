@@ -167,7 +167,7 @@ export default function Hero() {
           ref={labelRef}
           style={{
             fontFamily: 'var(--font-sans)',
-            fontSize: '0.72rem',
+            fontSize: '1.8rem',
             letterSpacing: '0.32em',
             textTransform: 'uppercase',
             color: 'var(--color-pink)',
