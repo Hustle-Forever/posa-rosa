@@ -233,27 +233,6 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Scroll hint */}
-      <div
-        ref={scrollHintRef}
-        style={{
-          position: 'absolute',
-          bottom: '2.2rem',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '0.5rem',
-          color: 'rgba(253,246,240,0.45)',
-          zIndex: 10,
-        }}
-      >
-        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6rem', letterSpacing: '0.26em', textTransform: 'uppercase' }}>
-          scroll
-        </span>
-        <ScrollArrow />
-      </div>
     </section>
   )
 }
