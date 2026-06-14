@@ -1,0 +1,112 @@
+:root {
+  --color-bg:   #FDF6F0;
+  --color-pink: #E8A0A0;
+  --color-dark: #3D1A1A;
+  --color-gold: #C9A96E;
+  --color-text: #2A1A1A;
+  --bar-h: 36px;
+  --nav-h: 72px;
+
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-sans:  'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Marquee animations */
+@keyframes ticker {
+  from { transform: translateX(0) }
+  to   { transform: translateX(-50%) }
+}
+
+@keyframes marquee-dark {
+  from { transform: translateX(0) }
+  to   { transform: translateX(-50%) }
+}
+
+/* Scroll anchor offset for fixed headers */
+section[id] {
+  scroll-margin-top: calc(var(--bar-h) + var(--nav-h));
+}
+
+/* Product card hover effects */
+.product-card {
+  box-shadow: 0 4px 32px rgba(61, 26, 26, 0.06);
+  cursor: pointer;
+}
+
+.product-card-img {
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.product-card:hover .product-card-img {
+  transform: scale(1.07);
+}
+
+.product-card-overlay {
+  transition: opacity 0.4s ease;
+}
+
+.product-card:hover .product-card-overlay {
+  opacity: 1 !important;
+}
+
+/* Product grid row — responsive */
+.product-row {
+  display: flex;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .product-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .product-row > * {
+    flex: none !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+/* How-to-order step numbers */
+.step-number {
+  font-family: var(--font-serif);
+  font-size: clamp(3.5rem, 7vw, 5.5rem);
+  font-weight: 300;
+  color: var(--color-gold);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+/* Utility: visually-hidden for screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
