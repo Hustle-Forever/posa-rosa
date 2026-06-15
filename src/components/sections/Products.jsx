@@ -44,15 +44,15 @@ export default function Products() {
 
       <style>{`
         .gallery-height-wrapper { height: 600px; }
-        @media (max-width: 768px) { .gallery-height-wrapper { height: 400px; } }
+        @media (max-width: 768px) { .gallery-height-wrapper { height: 500px; } }
       `}</style>
       <div className="gallery-height-wrapper" style={{ position: 'relative' }}>
         <CircularGallery
           items={items}
-          bend={3}
+          bend={1}
           textColor="#3D1A1A"
           borderRadius={0.05}
-          scrollSpeed={2}
+          scrollSpeed={1}
           scrollEase={0.02}
           fontUrl="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap"
           font="300 24px Cormorant Garamond"
