@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import CircularGallery from '../CircularGallery/CircularGallery'
 
 const items = [
@@ -23,6 +24,14 @@ const items = [
 ]
 
 export default function Products() {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
   return (
     <section
       id="chocolates"
@@ -44,15 +53,18 @@ export default function Products() {
 
       <style>{`
         .gallery-height-wrapper { height: 600px; }
-        @media (max-width: 768px) { .gallery-height-wrapper { height: 500px; } }
+        @media (max-width: 768px) { .gallery-height-wrapper { height: 550px; } }
       `}</style>
-      <div className="gallery-height-wrapper" style={{ position: 'relative' }}>
+      <div
+        className="gallery-height-wrapper"
+        style={{ position: 'relative', ...(isMobile ? { touchAction: 'pan-x' } : {}) }}
+      >
         <CircularGallery
           items={items}
-          bend={1}
+          bend={isMobile ? 0.5 : 1}
           textColor="#3D1A1A"
           borderRadius={0.05}
-          scrollSpeed={1}
+          scrollSpeed={isMobile ? 3 : 1}
           scrollEase={0.02}
           fontUrl="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap"
           font="300 24px Cormorant Garamond"
