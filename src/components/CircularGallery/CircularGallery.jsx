@@ -392,6 +392,7 @@ class App {
     this.start = e.touches ? e.touches[0].clientX : e.clientX;
   }
   onTouchMove(e) {
+    e.preventDefault();
     if (!this.isDown) return;
     const x = e.touches ? e.touches[0].clientX : e.clientX;
     const distance = (this.start - x) * (this.scrollSpeed * 0.025);
@@ -446,7 +447,7 @@ class App {
     window.addEventListener('mousemove',   this.boundOnTouchMove);
     window.addEventListener('mouseup',     this.boundOnTouchUp);
     window.addEventListener('touchstart',  this.boundOnTouchDown);
-    window.addEventListener('touchmove',   this.boundOnTouchMove);
+    window.addEventListener('touchmove',   this.boundOnTouchMove, { passive: false });
     window.addEventListener('touchend',    this.boundOnTouchUp);
   }
   destroy() {
