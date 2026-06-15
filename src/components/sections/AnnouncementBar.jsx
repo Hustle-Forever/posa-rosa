@@ -1,5 +1,4 @@
-const MSG = 'Order via WhatsApp · Deliveroo · talabat · Open 9AM–8PM · No calls please · '
-const TRACK = MSG.repeat(6)
+const TEXT = 'Handcrafted Truffles & Chocolates · Custom Orders for Weddings, Birthdays & Corporate Events · Order Online, WhatsApp, Deliveroo & Talabat · '
 
 export default function AnnouncementBar() {
   return (
@@ -22,7 +21,7 @@ export default function AnnouncementBar() {
         style={{
           display: 'inline-flex',
           whiteSpace: 'nowrap',
-          animation: 'ticker 30s linear infinite',
+          animation: 'marquee-dark 60s linear infinite',
           willChange: 'transform',
         }}
       >
@@ -35,11 +34,11 @@ export default function AnnouncementBar() {
             color: '#FDF6F0',
           }}
         >
-          {TRACK}{TRACK}
+          {TEXT}{TEXT}{TEXT}{TEXT}
         </span>
       </div>
       <p className="sr-only">
-        Order via WhatsApp · Deliveroo · talabat · Open 9AM–8PM · No calls please
+        Handcrafted Truffles & Chocolates · Custom Orders for Weddings, Birthdays & Corporate Events · Order Online, WhatsApp, Deliveroo & Talabat
       </p>
     </div>
   )
