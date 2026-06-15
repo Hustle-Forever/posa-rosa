@@ -1,10 +1,19 @@
 import { useState, useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { ShoppingBag } from 'lucide-react'
+import { useCart } from '../../context/CartContext'
 
 const WA = 'https://wa.me/971501234567?text=' + encodeURIComponent("Hi! I'd like to order from Posa Rosa 🦋")
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [scrolled,  setScrolled]  = useState(false)
+  const [menuOpen,  setMenuOpen]  = useState(false)
+  const { pathname } = useLocation()
+  const { cartCount } = useCart()
+
+  const isHome    = pathname === '/'
+  const isScrolled = scrolled || !isHome
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 80)
@@ -12,7 +21,9 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const linkColor = scrolled ? 'var(--color-dark)' : '#FDF6F0'
+  useEffect(() => { setMenuOpen(false) }, [pathname])
+
+  const linkColor = isScrolled ? 'var(--color-dark)' : '#FDF6F0'
 
   return (
     <nav
@@ -24,8 +35,8 @@ export default function Navbar() {
         height: 'var(--nav-h)',
         zIndex: 90,
         transition: 'background-color 0.45s ease, box-shadow 0.45s ease',
-        backgroundColor: scrolled ? '#FDF6F0' : 'transparent',
-        boxShadow: scrolled ? '0 1px 24px rgba(61,26,26,0.07)' : 'none',
+        backgroundColor: isScrolled ? '#FDF6F0' : 'transparent',
+        boxShadow: isScrolled ? '0 1px 24px rgba(61,26,26,0.07)' : 'none',
       }}
     >
       <div
@@ -41,17 +52,14 @@ export default function Navbar() {
         }}
       >
         {/* Left links */}
-        <div
-          className="nav-links-left"
-          style={{ display: 'flex', gap: '2.8rem', alignItems: 'center' }}
-        >
+        <div className="nav-links-left" style={{ display: 'flex', gap: '2.8rem', alignItems: 'center' }}>
           <a href="#chocolates" style={linkStyle(linkColor)}>Our Chocolates</a>
           <a href="#gift-boxes" style={linkStyle(linkColor)}>Gift Boxes</a>
         </div>
 
         {/* Center logo */}
-        <a
-          href="#"
+        <Link
+          to="/"
           aria-label="Posa Rosa home"
           style={{
             position: 'absolute',
@@ -68,19 +76,61 @@ export default function Navbar() {
             style={{
               height: '105px',
               width: 'auto',
-              filter: scrolled ? 'none' : 'brightness(0) invert(1)',
+              filter: isScrolled ? 'none' : 'brightness(0) invert(1)',
               transition: 'filter 0.45s ease',
             }}
           />
-        </a>
+        </Link>
 
         {/* Right links */}
-        <div
-          className="nav-links-right"
-          style={{ display: 'flex', gap: '2.8rem', alignItems: 'center' }}
-        >
+        <div className="nav-links-right" style={{ display: 'flex', gap: '2.8rem', alignItems: 'center' }}>
+          <Link to="/shop" style={linkStyle(linkColor)}>Shop</Link>
           <a href={WA} target="_blank" rel="noopener noreferrer" style={linkStyle(linkColor)}>Order</a>
           <a href="#about" style={linkStyle(linkColor)}>About</a>
+
+          {/* Cart icon */}
+          <Link
+            to="/cart"
+            aria-label={`Cart${cartCount > 0 ? ` — ${cartCount} items` : ''}`}
+            style={{
+              position: 'relative',
+              color: linkColor,
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'color 0.45s ease',
+              textDecoration: 'none',
+            }}
+          >
+            <ShoppingBag size={18} strokeWidth={1.5} />
+            {cartCount > 0 && (
+              <motion.span
+                key={cartCount}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 22 }}
+                style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  right: '-9px',
+                  minWidth: '16px',
+                  height: '16px',
+                  background: 'var(--color-gold)',
+                  color: 'var(--color-dark)',
+                  borderRadius: '8px',
+                  fontSize: '0.58rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontFamily: 'var(--font-sans)',
+                  padding: '0 3px',
+                  letterSpacing: 0,
+                }}
+              >
+                {cartCount}
+              </motion.span>
+            )}
+          </Link>
         </div>
 
         {/* Mobile hamburger */}
@@ -123,26 +173,14 @@ export default function Navbar() {
             boxShadow: '0 8px 40px rgba(61,26,26,0.1)',
           }}
         >
-          {[
-            { label: 'Our Chocolates', href: '#chocolates' },
-            { label: 'Gift Boxes', href: '#gift-boxes' },
-            { label: 'Order on WhatsApp', href: WA },
-            { label: 'About', href: '#about' },
-          ].map(({ label, href }) => (
-            <a
-              key={label}
-              href={href}
-              target={href.startsWith('http') ? '_blank' : undefined}
-              rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
-              onClick={() => setMenuOpen(false)}
-              style={{
-                ...linkStyle('var(--color-dark)'),
-                fontSize: '0.9rem',
-              }}
-            >
-              {label}
-            </a>
-          ))}
+          <a href="#chocolates"  onClick={() => setMenuOpen(false)} style={{ ...linkStyle('var(--color-dark)'), fontSize: '0.9rem' }}>Our Chocolates</a>
+          <a href="#gift-boxes"  onClick={() => setMenuOpen(false)} style={{ ...linkStyle('var(--color-dark)'), fontSize: '0.9rem' }}>Gift Boxes</a>
+          <Link to="/shop"       onClick={() => setMenuOpen(false)} style={{ ...linkStyle('var(--color-dark)'), fontSize: '0.9rem' }}>Shop</Link>
+          <a href={WA} target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)} style={{ ...linkStyle('var(--color-dark)'), fontSize: '0.9rem' }}>Order on WhatsApp</a>
+          <Link to="/cart"       onClick={() => setMenuOpen(false)} style={{ ...linkStyle('var(--color-dark)'), fontSize: '0.9rem' }}>
+            Cart{cartCount > 0 ? ` (${cartCount})` : ''}
+          </Link>
+          <a href="#about"       onClick={() => setMenuOpen(false)} style={{ ...linkStyle('var(--color-dark)'), fontSize: '0.9rem' }}>About</a>
         </div>
       )}
 

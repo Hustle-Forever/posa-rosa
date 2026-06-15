@@ -1,29 +1,25 @@
-import AnnouncementBar from './components/sections/AnnouncementBar'
-import Navbar          from './components/sections/Navbar'
-import Hero            from './components/sections/Hero'
-import MarqueeStrip    from './components/sections/MarqueeStrip'
-import Products        from './components/sections/Products'
-import EditorialBanner from './components/sections/EditorialBanner'
-import GiftBoxes       from './components/sections/GiftBoxes'
-import HowToOrder      from './components/sections/HowToOrder'
-import BrandStory      from './components/sections/BrandStory'
-import Footer          from './components/sections/Footer'
+import { Routes, Route } from 'react-router-dom'
+import { CartProvider }  from './context/CartContext'
+import AnnouncementBar   from './components/sections/AnnouncementBar'
+import Navbar            from './components/sections/Navbar'
+import Footer            from './components/sections/Footer'
+import HomePage          from './pages/HomePage'
+import ShopPage          from './pages/ShopPage'
+import CartPage          from './pages/CartPage'
+import CheckoutPage      from './pages/CheckoutPage'
 
 export default function App() {
   return (
-    <>
+    <CartProvider>
       <AnnouncementBar />
       <Navbar />
-      <main>
-        <Hero />
-        <MarqueeStrip />
-        <Products />
-        <EditorialBanner />
-        <GiftBoxes />
-        <HowToOrder />
-        <BrandStory />
-      </main>
+      <Routes>
+        <Route path="/"         element={<HomePage />}    />
+        <Route path="/shop"     element={<ShopPage />}    />
+        <Route path="/cart"     element={<CartPage />}    />
+        <Route path="/checkout" element={<CheckoutPage />} />
+      </Routes>
       <Footer />
-    </>
+    </CartProvider>
   )
 }
