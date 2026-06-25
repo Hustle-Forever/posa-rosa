@@ -1,21 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '../context/CartContext'
-
-const COLLECTIONS = ['All', 'Classic Collection', 'Matcha Series', 'Kinder & Red Velvet']
-
-const PRODUCTS = [
-  { id: 1,  name: 'The Original',      collection: 'Classic Collection',  image: '/assets/images/Original, simple, perfect..jpg',            price: 15,  unit: 'piece'     },
-  { id: 2,  name: 'Soft & Melty',      collection: 'Classic Collection',  image: '/assets/images/Soft, melty, perfect..jpg',                 price: 15,  unit: 'piece'     },
-  { id: 3,  name: 'Sweet & Simple',    collection: 'Classic Collection',  image: '/assets/images/Sweet and simple..jpg',                     price: 75,  unit: 'box of 6'  },
-  { id: 4,  name: 'Matcha Butterfly',  collection: 'Matcha Series',       image: '/assets/images/Matcha, but make it a butterfly..jpg',      price: 15,  unit: 'piece'     },
-  { id: 5,  name: 'Matcha Fueled',     collection: 'Matcha Series',       image: '/assets/images/Butterflies fueled by matcha..jpg',         price: 75,  unit: 'box of 6'  },
-  { id: 6,  name: 'Matcha Obsessed',   collection: 'Matcha Series',       image: '/assets/images/For the matcha-obsessed only..jpg',         price: 140, unit: 'box of 12' },
-  { id: 7,  name: 'Kinder Love',       collection: 'Kinder & Red Velvet', image: '/assets/images/Butterflies filled with Kinder love..jpg', price: 15,  unit: 'piece'     },
-  { id: 8,  name: 'Red Velvet',        collection: 'Kinder & Red Velvet', image: '/assets/images/For the red velvet lovers..jpg',            price: 75,  unit: 'box of 6'  },
-  { id: 9,  name: 'Red Velvet Wings',  collection: 'Kinder & Red Velvet', image: '/assets/images/Little red velvet wings..jpg',              price: 15,  unit: 'piece'     },
-  { id: 10, name: 'Cappuccino',        collection: 'Classic Collection',  image: '/assets/images/Cappuccino, but make it a butterfly..jpg',  price: 75,  unit: 'box of 6'  },
-]
+import { getProducts, normalizeProduct } from '../lib/shopify'
 
 const qtyBtnStyle = {
   width: '32px',
@@ -115,8 +101,10 @@ function ProductCard({ product }) {
           margin: 0,
           letterSpacing: '0.02em',
         }}>
-          AED {product.price}{' '}
-          <span style={{ fontWeight: 400, opacity: 0.5, fontSize: '0.73rem' }}>/ {product.unit}</span>
+          AED {product.price}
+          {product.unit && (
+            <span style={{ fontWeight: 400, opacity: 0.5, fontSize: '0.73rem' }}> / {product.unit}</span>
+          )}
         </p>
 
         <div style={{ flex: 1, minHeight: '0.5rem' }} />
@@ -177,10 +165,27 @@ function ProductCard({ product }) {
 
 export default function ShopPage() {
   const [activeFilter, setActiveFilter] = useState('All')
+  const [products, setProducts] = useState([])
+  const [collections, setCollections] = useState(['All'])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getProducts()
+      .then(raw => {
+        const normalized = raw.map(normalizeProduct)
+        setProducts(normalized)
+        const unique = [...new Set(normalized.map(p => p.collection).filter(Boolean))]
+        setCollections(['All', ...unique])
+      })
+      .catch(err => {
+        console.error('Failed to load products:', err)
+      })
+      .finally(() => setLoading(false))
+  }, [])
 
   const filtered = activeFilter === 'All'
-    ? PRODUCTS
-    : PRODUCTS.filter(p => p.collection === activeFilter)
+    ? products
+    : products.filter(p => p.collection === activeFilter)
 
   return (
     <motion.div
@@ -195,6 +200,8 @@ export default function ShopPage() {
         .shop-add-btn:hover { background: var(--color-gold) !important; color: var(--color-dark) !important; }
         .shop-filter-btn { transition: all 0.25s ease; }
         .shop-filter-btn:hover { opacity: 1 !important; }
+        @keyframes shimmer { 0% { opacity: 0.4; } 50% { opacity: 0.8; } 100% { opacity: 0.4; } }
+        .shop-skeleton { animation: shimmer 1.6s ease-in-out infinite; }
         @media (max-width: 900px) {
           .shop-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 1.25rem !important; }
         }
@@ -281,7 +288,7 @@ export default function ShopPage() {
           flexWrap: 'wrap',
         }}
       >
-        {COLLECTIONS.map(col => {
+        {collections.map(col => {
           const active = activeFilter === col
           return (
             <button
@@ -310,24 +317,90 @@ export default function ShopPage() {
         })}
       </div>
 
-      {/* Product Grid */}
-      <div
-        className="shop-grid"
-        style={{
+      {/* Loading State */}
+      {loading && (
+        <div style={{
           maxWidth: '1380px',
           margin: '0 auto',
           padding: '3.5rem 2.5rem 7rem',
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
           gap: '1.75rem',
-        }}
-      >
-        <AnimatePresence mode="popLayout">
-          {filtered.map(product => (
-            <ProductCard key={product.id} product={product} />
+        }}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="shop-skeleton"
+              style={{
+                background: 'rgba(61,26,26,0.07)',
+                borderRadius: '12px',
+                height: '380px',
+              }}
+            />
           ))}
-        </AnimatePresence>
-      </div>
+        </div>
+      )}
+
+      {/* Coming Soon — no products after load */}
+      {!loading && products.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '7rem 2rem',
+            gap: '1rem',
+            textAlign: 'center',
+          }}
+        >
+          <p style={{
+            fontFamily: 'Cormorant Garamond, Georgia, serif',
+            fontSize: 'clamp(2rem, 5vw, 3.5rem)',
+            fontWeight: 300,
+            color: 'var(--color-dark)',
+            margin: 0,
+            letterSpacing: '0.06em',
+          }}>
+            Coming Soon
+          </p>
+          <p style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: '0.72rem',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: 'var(--color-dark)',
+            opacity: 0.5,
+            margin: 0,
+          }}>
+            Something beautiful is on its way
+          </p>
+        </motion.div>
+      )}
+
+      {/* Product Grid */}
+      {!loading && products.length > 0 && (
+        <div
+          className="shop-grid"
+          style={{
+            maxWidth: '1380px',
+            margin: '0 auto',
+            padding: '3.5rem 2.5rem 7rem',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '1.75rem',
+          }}
+        >
+          <AnimatePresence mode="popLayout">
+            {filtered.map(product => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
     </motion.div>
   )
 }

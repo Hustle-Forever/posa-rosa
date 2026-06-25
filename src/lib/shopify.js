@@ -1,0 +1,130 @@
+const domain = import.meta.env.VITE_SHOPIFY_STORE_DOMAIN
+const token = import.meta.env.VITE_SHOPIFY_STOREFRONT_TOKEN
+const endpoint = `https://${domain}/api/2024-01/graphql.json`
+
+async function storefront(query, variables = {}) {
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Storefront-Access-Token': token,
+    },
+    body: JSON.stringify({ query, variables }),
+  })
+  const json = await res.json()
+  if (json.errors) throw new Error(json.errors[0].message)
+  return json.data
+}
+
+export async function getProducts() {
+  const data = await storefront(`
+    {
+      products(first: 100) {
+        edges {
+          node {
+            id
+            title
+            handle
+            description
+            priceRange {
+              minVariantPrice {
+                amount
+                currencyCode
+              }
+            }
+            images(first: 5) {
+              edges {
+                node {
+                  url
+                  altText
+                }
+              }
+            }
+            collections(first: 5) {
+              edges {
+                node {
+                  title
+                  handle
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  `)
+  return data.products.edges.map(e => e.node)
+}
+
+export async function getProductByHandle(handle) {
+  const data = await storefront(
+    `
+    query getProduct($handle: String!) {
+      product(handle: $handle) {
+        id
+        title
+        handle
+        description
+        priceRange {
+          minVariantPrice {
+            amount
+            currencyCode
+          }
+        }
+        images(first: 10) {
+          edges {
+            node {
+              url
+              altText
+            }
+          }
+        }
+        collections(first: 5) {
+          edges {
+            node {
+              title
+              handle
+            }
+          }
+        }
+      }
+    }
+  `,
+    { handle }
+  )
+  return data.product
+}
+
+export async function getCollections() {
+  const data = await storefront(`
+    {
+      collections(first: 50) {
+        edges {
+          node {
+            id
+            title
+            handle
+            description
+            image {
+              url
+              altText
+            }
+          }
+        }
+      }
+    }
+  `)
+  return data.collections.edges.map(e => e.node)
+}
+
+export function normalizeProduct(node) {
+  return {
+    id: node.id,
+    name: node.title,
+    handle: node.handle,
+    description: node.description,
+    price: parseFloat(node.priceRange.minVariantPrice.amount),
+    image: node.images.edges[0]?.node.url ?? '',
+    collection: node.collections.edges[0]?.node.title ?? '',
+  }
+}
