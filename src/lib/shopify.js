@@ -3,6 +3,9 @@ const token = import.meta.env.VITE_SHOPIFY_STOREFRONT_TOKEN
 const endpoint = `https://${domain}/api/2024-01/graphql.json`
 
 async function storefront(query, variables = {}) {
+  console.log('[Shopify] endpoint :', endpoint)
+  console.log('[Shopify] token     :', token ? `${token.slice(0, 4)}...${token.slice(-4)}` : 'MISSING')
+
   const res = await fetch(endpoint, {
     method: 'POST',
     headers: {
@@ -11,8 +14,25 @@ async function storefront(query, variables = {}) {
     },
     body: JSON.stringify({ query, variables }),
   })
-  const json = await res.json()
-  if (json.errors) throw new Error(json.errors[0].message)
+
+  console.log('[Shopify] status    :', res.status, res.statusText)
+
+  const text = await res.text()
+  console.log('[Shopify] body      :', text)
+
+  let json
+  try {
+    json = JSON.parse(text)
+  } catch (e) {
+    console.error('[Shopify] JSON parse error:', e.message)
+    throw new Error(`Shopify returned non-JSON (status ${res.status})`)
+  }
+
+  if (json.errors) {
+    console.error('[Shopify] GraphQL errors:', json.errors)
+    throw new Error(json.errors[0].message)
+  }
+
   return json.data
 }
 

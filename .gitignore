@@ -25,3 +25,6 @@ dist-ssr
 .env
 capture*.mjs
 capturefinal.mjs
+
+# Local Netlify folder
+.netlify
