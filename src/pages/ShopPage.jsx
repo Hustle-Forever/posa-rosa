@@ -3,23 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '../context/CartContext'
 import { getProducts, normalizeProduct } from '../lib/shopify'
 
-const qtyBtnStyle = {
-  width: '32px',
-  height: '32px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  background: 'transparent',
-  border: '1px solid rgba(61,26,26,0.22)',
-  borderRadius: '50%',
-  cursor: 'pointer',
-  fontFamily: 'Cormorant Garamond, Georgia, serif',
-  fontSize: '1.15rem',
-  color: 'var(--color-dark)',
-  transition: 'all 0.22s ease',
-  flexShrink: 0,
-}
-
 function ProductCard({ product }) {
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
@@ -45,10 +28,16 @@ function ProductCard({ product }) {
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
+        boxShadow: '0 4px 24px rgba(61,26,26,0.07)',
       }}
     >
-      {/* Image */}
-      <div style={{ position: 'relative', paddingBottom: '65%', overflow: 'hidden' }}>
+      {/* Image — inner overflow:hidden clips the zoom so it stays within the image bounds */}
+      <div style={{
+        position: 'relative',
+        paddingBottom: '70%',
+        overflow: 'hidden',
+        flexShrink: 0,
+      }}>
         <img
           src={product.image}
           alt={product.name}
@@ -59,85 +48,141 @@ function ProductCard({ product }) {
             width: '100%',
             height: '100%',
             objectFit: 'cover',
+            transition: 'transform 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
           }}
         />
       </div>
 
       {/* Body */}
       <div style={{
-        padding: '1.25rem 1.4rem 1.5rem',
+        padding: '1.4rem 1.5rem 1.75rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.45rem',
         flex: 1,
       }}>
+
+        {/* Collection — gold small-caps label */}
         <span style={{
           fontFamily: 'var(--font-sans)',
-          fontSize: '0.6rem',
-          letterSpacing: '0.18em',
+          fontSize: '0.58rem',
+          letterSpacing: '0.22em',
           textTransform: 'uppercase',
           color: 'var(--color-gold)',
           fontWeight: 600,
+          display: 'block',
+          marginBottom: '0.4rem',
         }}>
           {product.collection}
         </span>
 
+        {/* Name — Cormorant 20px */}
         <h3 style={{
           fontFamily: 'Cormorant Garamond, Georgia, serif',
-          fontSize: '1.375rem',
+          fontSize: '1.25rem',
           fontWeight: 400,
           color: 'var(--color-dark)',
-          lineHeight: 1.2,
-          margin: 0,
+          lineHeight: 1.25,
+          margin: '0 0 0.45rem',
+          letterSpacing: '0.01em',
         }}>
           {product.name}
         </h3>
 
+        {/* Price — bold dark brown */}
         <p style={{
           fontFamily: 'var(--font-sans)',
           fontSize: '0.8rem',
-          fontWeight: 600,
+          fontWeight: 700,
           color: 'var(--color-dark)',
           margin: 0,
-          letterSpacing: '0.02em',
+          letterSpacing: '0.03em',
         }}>
           AED {product.price}
           {product.unit && (
-            <span style={{ fontWeight: 400, opacity: 0.5, fontSize: '0.73rem' }}> / {product.unit}</span>
+            <span style={{
+              fontWeight: 400,
+              opacity: 0.42,
+              fontSize: '0.7rem',
+              marginLeft: '0.3em',
+            }}>
+              / {product.unit}
+            </span>
           )}
         </p>
 
-        <div style={{ flex: 1, minHeight: '0.5rem' }} />
+        <div style={{ flex: 1, minHeight: '1.1rem' }} />
 
-        {/* Quantity selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', marginTop: '0.25rem' }}>
+        {/* Quantity — elegant unified bar */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'stretch',
+          border: '1px solid rgba(61,26,26,0.13)',
+          borderRadius: '6px',
+          overflow: 'hidden',
+          height: '38px',
+          marginBottom: '0.75rem',
+        }}>
           <button
             className="shop-qty-btn"
             onClick={() => setQty(q => Math.max(1, q - 1))}
-            style={qtyBtnStyle}
             aria-label="Decrease quantity"
+            style={{
+              width: '40px',
+              flexShrink: 0,
+              background: 'transparent',
+              border: 'none',
+              borderRight: '1px solid rgba(61,26,26,0.13)',
+              cursor: 'pointer',
+              fontFamily: 'Cormorant Garamond, Georgia, serif',
+              fontSize: '1.15rem',
+              color: 'var(--color-dark)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.18s ease',
+            }}
           >−</button>
           <span style={{
+            flex: 1,
             fontFamily: 'Cormorant Garamond, Georgia, serif',
-            fontSize: '1.125rem',
+            fontSize: '1rem',
             color: 'var(--color-dark)',
-            minWidth: '1.25rem',
-            textAlign: 'center',
-          }}>{qty}</span>
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            letterSpacing: '0.04em',
+            userSelect: 'none',
+          }}>
+            {qty}
+          </span>
           <button
             className="shop-qty-btn"
             onClick={() => setQty(q => q + 1)}
-            style={qtyBtnStyle}
             aria-label="Increase quantity"
+            style={{
+              width: '40px',
+              flexShrink: 0,
+              background: 'transparent',
+              border: 'none',
+              borderLeft: '1px solid rgba(61,26,26,0.13)',
+              cursor: 'pointer',
+              fontFamily: 'Cormorant Garamond, Georgia, serif',
+              fontSize: '1.15rem',
+              color: 'var(--color-dark)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.18s ease',
+            }}
           >+</button>
         </div>
 
         {/* Add to Cart */}
         <motion.button
           onClick={handleAdd}
-          whileTap={{ scale: 0.97 }}
-          animate={added ? { scale: [1, 1.04, 1] } : { scale: 1 }}
-          transition={{ duration: 0.3 }}
+          whileTap={{ scale: 0.98 }}
+          animate={added ? { scale: [1, 1.03, 1] } : { scale: 1 }}
+          transition={{ duration: 0.28 }}
           className="shop-add-btn"
           style={{
             width: '100%',
@@ -147,13 +192,12 @@ function ProductCard({ product }) {
             border: 'none',
             borderRadius: '6px',
             fontFamily: 'var(--font-sans)',
-            fontSize: '0.7rem',
-            letterSpacing: '0.14em',
+            fontSize: '0.64rem',
+            letterSpacing: '0.18em',
             textTransform: 'uppercase',
             cursor: 'pointer',
             fontWeight: 600,
-            marginTop: '0.5rem',
-            transition: 'background 0.3s ease, color 0.3s ease',
+            transition: 'background 0.32s ease, color 0.32s ease',
           }}
         >
           {added ? '✓ Added to Cart' : 'Add to Cart'}
@@ -195,8 +239,10 @@ export default function ShopPage() {
       style={{ background: 'var(--color-bg)', minHeight: '100vh', paddingTop: 'calc(var(--bar-h) + var(--nav-h))' }}
     >
       <style>{`
-        .product-card:hover { box-shadow: 0 12px 52px rgba(61,26,26,0.14) !important; transform: translateY(-3px); }
-        .shop-qty-btn:hover { background: var(--color-dark) !important; color: var(--color-gold) !important; border-color: var(--color-dark) !important; }
+        .product-card { transition: box-shadow 0.45s ease, transform 0.45s ease !important; }
+        .product-card:hover { box-shadow: 0 20px 64px rgba(61,26,26,0.13) !important; transform: translateY(-5px); }
+        .product-card:hover .product-card-img { transform: scale(1.05); }
+        .shop-qty-btn:hover { background: rgba(61,26,26,0.05) !important; }
         .shop-add-btn:hover { background: var(--color-gold) !important; color: var(--color-dark) !important; }
         .shop-filter-btn { transition: all 0.25s ease; }
         .shop-filter-btn:hover { opacity: 1 !important; }

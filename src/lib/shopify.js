@@ -68,6 +68,13 @@ export async function getProducts() {
                 }
               }
             }
+            variants(first: 1) {
+              edges {
+                node {
+                  id
+                }
+              }
+            }
           }
         }
       }
@@ -146,5 +153,37 @@ export function normalizeProduct(node) {
     price: parseFloat(node.priceRange.minVariantPrice.amount),
     image: node.images.edges[0]?.node.url ?? '',
     collection: node.collections.edges[0]?.node.title ?? '',
+    variantId: node.variants?.edges[0]?.node.id ?? null,
   }
+}
+
+export async function createShopifyCart(items) {
+  const data = await storefront(
+    `
+    mutation cartCreate($input: CartInput!) {
+      cartCreate(input: $input) {
+        cart {
+          id
+          checkoutUrl
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+    `,
+    {
+      input: {
+        lines: items.map(item => ({
+          merchandiseId: item.variantId,
+          quantity: item.quantity,
+        })),
+      },
+    }
+  )
+
+  const { cart, userErrors } = data.cartCreate
+  if (userErrors?.length > 0) throw new Error(userErrors[0].message)
+  return cart.checkoutUrl
 }

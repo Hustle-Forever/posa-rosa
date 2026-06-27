@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { CheckCircle } from 'lucide-react'
 import { useCart } from '../context/CartContext'
 
 const AREAS = [
@@ -16,7 +15,7 @@ const TIME_SLOTS = [
   { label: 'Evening',   hours: '5PM – 8PM'   },
 ]
 
-const DELIVERY_FEE = 15
+const DELIVERY_FEE = 35
 
 function tomorrowMin() {
   const d = new Date()
@@ -103,11 +102,14 @@ function Field({ label, error, children }) {
 
 export default function CheckoutPage() {
   const { items, cartTotal, clearCart } = useCart()
-  const [submitted, setSubmitted] = useState(false)
-  const [errors, setErrors]       = useState({})
+  const navigate = useNavigate()
+
+  const [loading,     setLoading]     = useState(false)
+  const [serverError, setServerError] = useState(null)
+  const [errors,      setErrors]      = useState({})
   const [form, setForm] = useState({
     name: '', phone: '', email: '',
-    address: '', area: '', date: '', timeSlot: '', notes: '',
+    address: '', area: '', date: '', timeSlot: '', notes: '', mapsLink: '',
   })
 
   function set(key, val) {
@@ -128,116 +130,39 @@ export default function CheckoutPage() {
     return Object.keys(e).length === 0
   }
 
-  function handlePlaceOrder() {
+  async function handlePlaceOrder() {
     if (!validate()) return
-
-    const itemLines = items
-      .map(i => `• ${i.name} ×${i.quantity} — AED ${i.price * i.quantity}`)
-      .join('\n')
-
-    const total = cartTotal + DELIVERY_FEE
-
-    const msg = [
-      '🦋 *New Posa Rosa Order*',
-      '',
-      `*Customer:* ${form.name}`,
-      `*Phone:* ${form.phone}`,
-      `*Email:* ${form.email}`,
-      '',
-      `*Delivery Address:* ${form.address}, ${form.area}`,
-      `*Date:* ${form.date}`,
-      `*Time:* ${form.timeSlot}`,
-      form.notes.trim() ? `*Notes:* ${form.notes}` : null,
-      '',
-      '*Order Items:*',
-      itemLines,
-      '',
-      `*Subtotal:* AED ${cartTotal}`,
-      `*Delivery:* AED ${DELIVERY_FEE}`,
-      `*Total:* AED ${total}`,
-      '',
-      '*Payment:* Cash on Delivery',
-      '',
-      'Thank you for choosing Posa Rosa 🦋',
-    ].filter(l => l !== null).join('\n')
-
-    window.open(`https://wa.me/971503509459?text=${encodeURIComponent(msg)}`, '_blank')
-    clearCart()
-    setSubmitted(true)
+    setLoading(true)
+    setServerError(null)
+    try {
+      const res = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer: { name: form.name, phone: form.phone, email: form.email },
+          delivery: {
+            address: form.address, area: form.area, date: form.date,
+            timeSlot: form.timeSlot, notes: form.notes, mapsLink: form.mapsLink,
+          },
+          items: items.map(i => ({
+            variantId: i.variantId, quantity: i.quantity, name: i.name, price: i.price,
+          })),
+          total: cartTotal + DELIVERY_FEE,
+        }),
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.error || 'Order failed')
+      clearCart()
+      navigate(`/order-confirmation?id=${data.orderNumber}`, {
+        state: { orderNumber: data.orderNumber, items: [...items], delivery: form },
+      })
+    } catch (err) {
+      console.error('Checkout error:', err)
+      setServerError('Something went wrong. Please try again or contact us on WhatsApp.')
+      setLoading(false)
+    }
   }
 
-  /* ── Success state ── */
-  if (submitted) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        style={{
-          background: 'var(--color-bg)',
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 'calc(var(--bar-h) + var(--nav-h) + 4rem) 2rem 6rem',
-        }}
-      >
-        <div style={{ textAlign: 'center', maxWidth: '480px' }}>
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.1 }}
-          >
-            <CheckCircle size={68} strokeWidth={1.2} color="var(--color-gold)" style={{ marginBottom: '1.5rem' }} />
-          </motion.div>
-          <motion.h2
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            style={{
-              fontFamily: 'Cormorant Garamond, Georgia, serif',
-              fontSize: 'clamp(2rem, 5vw, 2.75rem)',
-              fontWeight: 300,
-              color: 'var(--color-dark)',
-              margin: '0 0 1rem',
-            }}
-          >
-            Order Sent!
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.45, duration: 0.5 }}
-            style={{
-              fontFamily: 'var(--font-sans)',
-              fontSize: '0.84rem',
-              color: 'rgba(61,26,26,0.6)',
-              lineHeight: 1.8,
-              marginBottom: '2.5rem',
-            }}
-          >
-            Your order details have been opened in WhatsApp. Please send the message to complete your order — we'll confirm delivery within 24 hours. 🦋
-          </motion.p>
-          <Link to="/shop" style={{
-            display: 'inline-block',
-            padding: '0.9rem 2.75rem',
-            background: 'var(--color-dark)',
-            color: 'var(--color-gold)',
-            fontFamily: 'var(--font-sans)',
-            fontSize: '0.72rem',
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            textDecoration: 'none',
-            borderRadius: '4px',
-            fontWeight: 600,
-          }}>
-            Continue Shopping
-          </Link>
-        </div>
-      </motion.div>
-    )
-  }
-
-  /* ── Checkout form ── */
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -252,7 +177,7 @@ export default function CheckoutPage() {
         .co-time-btn { transition: all 0.22s; }
         .co-time-btn:hover { border-color: var(--color-dark) !important; }
         .co-place-btn { transition: background 0.3s ease, color 0.3s ease; }
-        .co-place-btn:hover { background: var(--color-gold) !important; color: var(--color-dark) !important; }
+        .co-place-btn:hover:not(:disabled) { background: var(--color-gold) !important; color: var(--color-dark) !important; }
         @media (max-width: 940px) {
           .co-layout { flex-direction: column !important; }
           .co-sidebar { width: 100% !important; position: static !important; }
@@ -375,11 +300,21 @@ export default function CheckoutPage() {
                   style={{ ...inputStyle(), resize: 'vertical' }}
                 />
               </Field>
+
+              <Field label="Google Maps Link (optional)">
+                <input
+                  className="co-input"
+                  type="url"
+                  placeholder="https://maps.app.goo.gl/..."
+                  value={form.mapsLink}
+                  onChange={e => set('mapsLink', e.target.value)}
+                  style={inputStyle()}
+                />
+              </Field>
             </FormSection>
 
             {/* 03 Payment */}
             <FormSection number="03" title="Payment Method">
-              {/* Cash on delivery – active */}
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '1rem',
                 padding: '1.1rem 1.25rem',
@@ -403,7 +338,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Online payment – coming soon */}
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '1rem',
                 padding: '1.1rem 1.25rem',
@@ -505,6 +439,7 @@ export default function CheckoutPage() {
                 className="co-place-btn"
                 onClick={handlePlaceOrder}
                 whileTap={{ scale: 0.98 }}
+                disabled={loading}
                 style={{
                   width: '100%',
                   padding: '1rem',
@@ -516,11 +451,13 @@ export default function CheckoutPage() {
                   fontSize: '0.75rem',
                   letterSpacing: '0.14em',
                   textTransform: 'uppercase',
-                  cursor: 'pointer',
+                  cursor: loading ? 'wait' : 'pointer',
                   fontWeight: 600,
+                  opacity: loading ? 0.7 : 1,
+                  transition: 'opacity 0.2s ease',
                 }}
               >
-                Place Order via WhatsApp
+                {loading ? 'Processing your order...' : 'Place Order'}
               </motion.button>
 
               {Object.keys(errors).length > 0 && (
@@ -537,6 +474,23 @@ export default function CheckoutPage() {
                   }}
                 >
                   Please fill all required fields.
+                </motion.p>
+              )}
+
+              {serverError && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  style={{
+                    marginTop: '0.75rem',
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: '0.7rem',
+                    color: '#c0392b',
+                    textAlign: 'center',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {serverError}
                 </motion.p>
               )}
             </div>

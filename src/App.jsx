@@ -6,7 +6,8 @@ import Footer            from './components/sections/Footer'
 import HomePage          from './pages/HomePage'
 import ShopPage          from './pages/ShopPage'
 import CartPage          from './pages/CartPage'
-import CheckoutPage      from './pages/CheckoutPage'
+import CheckoutPage           from './pages/CheckoutPage'
+import OrderConfirmationPage   from './pages/OrderConfirmationPage'
 
 export default function App() {
   return (
@@ -14,10 +15,11 @@ export default function App() {
       <AnnouncementBar />
       <Navbar />
       <Routes>
-        <Route path="/"         element={<HomePage />}    />
-        <Route path="/shop"     element={<ShopPage />}    />
-        <Route path="/cart"     element={<CartPage />}    />
-        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/"                   element={<HomePage />}             />
+        <Route path="/shop"               element={<ShopPage />}             />
+        <Route path="/cart"               element={<CartPage />}             />
+        <Route path="/checkout"           element={<CheckoutPage />}         />
+        <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
       </Routes>
       <Footer />
     </CartProvider>

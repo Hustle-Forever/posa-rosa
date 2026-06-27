@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2, ShoppingBag } from 'lucide-react'
 import { useCart } from '../context/CartContext'
-
 const DELIVERY_FEE = 15
 
 function SummaryRow({ label, value, bold }) {
@@ -27,7 +26,6 @@ function SummaryRow({ label, value, bold }) {
 
 export default function CartPage() {
   const { items, removeFromCart, updateQuantity, cartTotal } = useCart()
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -270,24 +268,22 @@ export default function CartPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <Link
                     to="/checkout"
-                    className="cart-checkout-btn"
                     style={{
                       display: 'block',
-                      padding: '0.9rem',
-                      background: 'var(--color-dark)',
-                      color: 'var(--color-gold)',
+                      width: '100%',
+                      padding: '1rem',
+                      backgroundColor: '#3D1A1A',
+                      color: '#FDF6F0',
                       textAlign: 'center',
-                      fontFamily: 'var(--font-sans)',
-                      fontSize: '0.72rem',
-                      letterSpacing: '0.14em',
-                      textTransform: 'uppercase',
                       textDecoration: 'none',
-                      borderRadius: '6px',
-                      fontWeight: 600,
-                      transition: 'background 0.3s ease, color 0.3s ease',
+                      fontFamily: 'Plus Jakarta Sans',
+                      fontSize: '0.75rem',
+                      letterSpacing: '0.15em',
+                      cursor: 'pointer',
+                      borderRadius: '4px',
                     }}
                   >
-                    Proceed to Checkout
+                    PROCEED TO CHECKOUT
                   </Link>
                   <Link
                     to="/shop"
