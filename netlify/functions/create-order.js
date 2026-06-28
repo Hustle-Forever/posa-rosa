@@ -7,6 +7,22 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
+// Firebase — initialized once per Lambda container (warm-start safe)
+const { initializeApp, getApps, getApp } = require('firebase/app')
+const { getFirestore, doc, setDoc }       = require('firebase/firestore/lite')
+
+const firebaseConfig = {
+  apiKey:            process.env.VITE_FIREBASE_API_KEY,
+  authDomain:        process.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId:         process.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket:     process.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId:             process.env.VITE_FIREBASE_APP_ID,
+}
+
+const fbApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()
+const db    = getFirestore(fbApp)
+
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: CORS, body: '' }
@@ -92,7 +108,7 @@ exports.handler = async (event) => {
     if (!res.ok) {
       console.error('[create-order] Shopify error:', res.status, JSON.stringify(data))
       return {
-        statusCode: res.status,
+        statusCode: 502,
         headers: { ...CORS, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           success: false,
@@ -100,6 +116,37 @@ exports.handler = async (event) => {
         }),
       }
     }
+
+    // ── Firestore write (best-effort — failure does not fail the order) ──
+    try {
+      const subtotal = (items || []).reduce((sum, i) => sum + i.price * i.quantity, 0)
+      const orderId  = String(data.order.order_number)
+
+      await setDoc(doc(db, 'orders', orderId), {
+        orderNumber:      orderId,
+        shopifyOrderId:   data.order.id,
+        status:           'Confirmed',
+        customerName:     customer.name,
+        customerPhone:    customer.phone,
+        customerEmail:    customer.email,
+        address:          delivery.address,
+        area:             delivery.area,
+        deliveryDate:     delivery.date,
+        deliveryTimeSlot: delivery.timeSlot,
+        notes:            delivery.notes || '',
+        googleMapsLink:   delivery.mapsLink || '',
+        items:            (items || []).map(i => ({ title: i.name, quantity: i.quantity, price: i.price })),
+        deliveryFee:      35,
+        subtotal,
+        total,
+        createdAt:        new Date().toISOString(),
+      })
+
+      console.log('[create-order] Firestore write OK — order', orderId)
+    } catch (fsErr) {
+      console.error('[create-order] Firestore write failed (Shopify order still created):', fsErr.message)
+    }
+    // ────────────────────────────────────────────────────────────────────
 
     return {
       statusCode: 200,
