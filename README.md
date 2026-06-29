@@ -84,3 +84,52 @@ service cloud.firestore {
   }
 }
 ```
+
+---
+
+## UI Redesign — What Was Added (June 2026)
+
+### New pages
+
+| Route | File | Description |
+|---|---|---|
+| `/about` | `src/pages/AboutPage.jsx` | Brand story, Para Café locations, contact form, brand values |
+| `/contact` | `src/pages/ContactPage.jsx` | WhatsApp CTA, email, Instagram, response time note |
+| `/wholesale` | `src/pages/WholesalePage.jsx` | Package cards (Café/Wedding/Birthday), custom order form |
+
+### Shop page
+
+- Product cards are now photo-first (square image, name + price below, no description clutter).
+- Clicking a card opens a **product detail modal** (large image, description, qty selector, Add to Cart).
+- Modal can also be deep-linked: `/shop?product=<handle>` opens it directly (used by the HomeGallery).
+
+### Cart drawer
+
+- **`src/components/CartDrawer.jsx`** — slide-over panel from the right, shows items, subtotal, delivery fee, total.
+- Cart icon in the navbar is **always visible** on mobile (beside the hamburger); tapping it opens the drawer.
+- Tapping "Add to Cart" in the product modal closes the modal and opens the drawer immediately.
+- Drawer has a prominent **Checkout →** button and a "Continue Shopping" link.
+- Cart drawer state (`drawerOpen`, `openDrawer`, `closeDrawer`) lives in `CartContext.jsx`.
+
+### Checkout page
+
+- Google Maps field label updated to "Paste your Google Maps location link (optional)".
+- Mobile: sticky order summary bar at the bottom of the screen (items count, delivery, total, Place Order button).
+- Place Order button shows a spinner while the request is in-flight.
+
+### Navbar
+
+- Added: Shop, Wholesale, About, Contact links.
+- "About" changed from a home-page anchor (`#about`) to a real page route (`/about`).
+- Cart icon always visible on all viewports.
+
+### Home page — REVERTED
+
+The home page was **not redesigned**. An accidental change (replacing `Products` with `HomeGallery`) was reverted. The home page is byte-for-byte identical to commit `83b5515`.
+
+### Needs Natinael's input before going live
+
+- WhatsApp number: `+971500000000` is a placeholder in About, Contact, Wholesale pages → replace with real number.
+- Instagram handle: `@posarosa` on Contact page → confirm correct handle.
+- Email: `hello@posarosa.ae` on Contact page → confirm or update.
+- Para Café Google Maps embed URLs in About page → paste real embed URLs for Rabdan Mall and Abu Dhabi University.

@@ -223,7 +223,7 @@ export default function OrderConfirmationPage() {
             marginBottom: '2.5rem',
           }}
         >
-          We will contact you shortly to confirm your order. 🦋
+          We will contact you shortly to confirm your order.
         </motion.p>
 
         {/* CTA */}

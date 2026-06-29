@@ -7,6 +7,7 @@ export function CartProvider({ children }) {
     try { return JSON.parse(localStorage.getItem('posa-rosa-cart')) ?? [] }
     catch { return [] }
   })
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
     localStorage.setItem('posa-rosa-cart', JSON.stringify(items))
@@ -35,11 +36,18 @@ export function CartProvider({ children }) {
 
   function clearCart() { setItems([]) }
 
+  const openDrawer  = () => setDrawerOpen(true)
+  const closeDrawer = () => setDrawerOpen(false)
+
   const cartCount = items.reduce((sum, i) => sum + i.quantity, 0)
   const cartTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
 
   return (
-    <CartContext.Provider value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, cartTotal, cartCount }}>
+    <CartContext.Provider value={{
+      items, addToCart, removeFromCart, updateQuantity, clearCart,
+      cartTotal, cartCount,
+      drawerOpen, openDrawer, closeDrawer,
+    }}>
       {children}
     </CartContext.Provider>
   )
