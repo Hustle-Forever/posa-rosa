@@ -1,4 +1,4 @@
-const WA = 'https://wa.me/971501234567?text=' + encodeURIComponent("Hi! I'd like to order from Posa Rosa 🦋")
+const WA = 'https://wa.me/971503509459?text=' + encodeURIComponent("Hi! I'd like to order from Posa Rosa 🦋")
 
 const LINKS = [
   { label: 'Instagram',  href: 'https://instagram.com/posa.rosa.uae' },

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { ShoppingBag } from 'lucide-react'
 import { useCart } from '../../context/CartContext'
 
-const WA = 'https://wa.me/971501234567?text=' + encodeURIComponent("Hi! I'd like to order from Posa Rosa 🦋")
+const WA = 'https://wa.me/971503509459?text=' + encodeURIComponent("Hi! I'd like to order from Posa Rosa 🦋")
 
 export default function Navbar() {
   const [scrolled,  setScrolled]  = useState(false)

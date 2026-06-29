@@ -4,7 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const WA = 'https://wa.me/971501234567?text=' + encodeURIComponent("Hi! I'd like to order from Posa Rosa 🦋")
+const WA = 'https://wa.me/971503509459?text=' + encodeURIComponent("Hi! I'd like to order from Posa Rosa 🦋")
 
 function ButterflySVG({ className }) {
   return (
@@ -40,7 +40,6 @@ export default function Hero() {
   const labelRef   = useRef(null)
   const subRef     = useRef(null)
   const btnsRef    = useRef(null)
-  const scrollHintRef = useRef(null)
   const bf1Ref     = useRef(null)
   const bf2Ref     = useRef(null)
   const bf3Ref     = useRef(null)
@@ -48,7 +47,7 @@ export default function Hero() {
   useEffect(() => {
     const ctx = gsap.context(() => {
       // Initial states
-      gsap.set([labelRef.current, headingRef.current, subRef.current, btnsRef.current, scrollHintRef.current], {
+      gsap.set([labelRef.current, headingRef.current, subRef.current, btnsRef.current], {
         opacity: 0, y: 48,
       })
       gsap.set([bf1Ref.current, bf2Ref.current, bf3Ref.current], { opacity: 0, scale: 0.3 })
@@ -59,7 +58,6 @@ export default function Hero() {
         .to(headingRef.current, { opacity: 1, y: 0, duration: 1.1 }, '-=0.5')
         .to(subRef.current,     { opacity: 1, y: 0, duration: 0.85 }, '-=0.65')
         .to(btnsRef.current,    { opacity: 1, y: 0, duration: 0.75 }, '-=0.55')
-        .to(scrollHintRef.current, { opacity: 1, y: 0, duration: 0.7 }, '-=0.4')
         .to([bf1Ref.current, bf2Ref.current, bf3Ref.current], {
           opacity: 1, scale: 1, duration: 1.3, stagger: 0.18, ease: 'back.out(1.4)',
         }, '-=0.8')

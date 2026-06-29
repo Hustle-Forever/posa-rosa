@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2, ShoppingBag } from 'lucide-react'
 import { useCart } from '../context/CartContext'
-const DELIVERY_FEE = 15
+const DELIVERY_FEE = 35
 
 function SummaryRow({ label, value, bold }) {
   return (

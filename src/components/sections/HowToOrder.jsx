@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 
-const WA = 'https://wa.me/971501234567?text=' + encodeURIComponent("Hi! I'd like to order from Posa Rosa 🦋")
+const WA = 'https://wa.me/971503509459?text=' + encodeURIComponent("Hi! I'd like to order from Posa Rosa 🦋")
 
 const STEPS = [
   { num: '01', title: 'Message us on WhatsApp', body: 'Send us a message — no calls please. We\'re here 9AM to 8PM, seven days a week.' },

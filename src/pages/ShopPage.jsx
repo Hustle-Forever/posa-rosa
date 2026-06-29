@@ -218,7 +218,8 @@ export default function ShopPage() {
       .then(raw => {
         const normalized = raw.map(normalizeProduct)
         setProducts(normalized)
-        const unique = [...new Set(normalized.map(p => p.collection).filter(Boolean))]
+        const HIDDEN = new Set(['Home page', 'home page', 'frontpage'])
+        const unique = [...new Set(normalized.map(p => p.collection).filter(c => c && !HIDDEN.has(c)))]
         setCollections(['All', ...unique])
       })
       .catch(err => {

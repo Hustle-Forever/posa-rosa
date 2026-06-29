@@ -1,0 +1,54 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e5]: Handcrafted Truffles & Chocolates · Custom Orders for Weddings, Birthdays & Corporate Events · Order Online, WhatsApp, Deliveroo & Talabat · Handcrafted Truffles & Chocolates · Custom Orders for Weddings, Birthdays & Corporate Events · Order Online, WhatsApp, Deliveroo & Talabat · Handcrafted Truffles & Chocolates · Custom Orders for Weddings, Birthdays & Corporate Events · Order Online, WhatsApp, Deliveroo & Talabat · Handcrafted Truffles & Chocolates · Custom Orders for Weddings, Birthdays & Corporate Events · Order Online, WhatsApp, Deliveroo & Talabat ·
+    - paragraph [ref=e6]: Handcrafted Truffles & Chocolates · Custom Orders for Weddings, Birthdays & Corporate Events · Order Online, WhatsApp, Deliveroo & Talabat
+  - navigation [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - link "Our Chocolates" [ref=e10] [cursor=pointer]:
+          - /url: "#chocolates"
+        - link "Gift Boxes" [ref=e11] [cursor=pointer]:
+          - /url: "#gift-boxes"
+      - link "Posa Rosa home":
+        - /url: /
+        - img "Posa Rosa"
+      - generic [ref=e12]:
+        - link "Shop" [ref=e13] [cursor=pointer]:
+          - /url: /shop
+        - link "Order" [ref=e14] [cursor=pointer]:
+          - /url: https://wa.me/971501234567?text=Hi!%20I'd%20like%20to%20order%20from%20Posa%20Rosa%20%F0%9F%A6%8B
+        - link "About" [ref=e15] [cursor=pointer]:
+          - /url: "#about"
+        - link "Cart" [ref=e16] [cursor=pointer]:
+          - /url: /cart
+          - img [ref=e17]
+  - generic [ref=e21]:
+    - heading "Your Cart" [level=1] [ref=e23]
+    - generic [ref=e24]:
+      - img [ref=e25]
+      - heading "Your cart is empty" [level=2] [ref=e28]
+      - paragraph [ref=e29]: Explore our handcrafted butterfly chocolates.
+      - link "Shop Now" [ref=e30] [cursor=pointer]:
+        - /url: /shop
+  - contentinfo [ref=e31]:
+    - generic [ref=e32]:
+      - generic [ref=e33]:
+        - img "Posa Rosa"
+      - paragraph [ref=e34]: Born to be Beautiful
+      - navigation "Footer navigation" [ref=e35]:
+        - list [ref=e36]:
+          - listitem [ref=e37]:
+            - link "Instagram" [ref=e38] [cursor=pointer]:
+              - /url: https://instagram.com/posa.rosa.uae
+          - listitem [ref=e39]:
+            - link "WhatsApp" [ref=e40] [cursor=pointer]:
+              - /url: https://wa.me/971501234567?text=Hi!%20I'd%20like%20to%20order%20from%20Posa%20Rosa%20%F0%9F%A6%8B
+          - listitem [ref=e41]:
+            - link "Deliveroo" [ref=e42] [cursor=pointer]:
+              - /url: https://deliveroo.ae
+          - listitem [ref=e43]:
+            - link "talabat" [ref=e44] [cursor=pointer]:
+              - /url: https://www.talabat.com
+      - paragraph [ref=e46]: Open 9AM – 8PM · Every Day
+      - paragraph [ref=e47]: No calls please — WhatsApp only
+      - paragraph [ref=e48]: © 2025 Posa Rosa · Abu Dhabi

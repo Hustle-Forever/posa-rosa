@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 
-const WA = 'https://wa.me/971501234567?text=' + encodeURIComponent("Hi! I'd like to order a gift box from Posa Rosa 🦋🎁")
+const WA = 'https://wa.me/971503509459?text=' + encodeURIComponent("Hi! I'd like to order a gift box from Posa Rosa 🦋🎁")
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 44 },

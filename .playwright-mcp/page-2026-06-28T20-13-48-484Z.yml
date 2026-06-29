@@ -1,0 +1,122 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e5]: Handcrafted Truffles & Chocolates · Custom Orders for Weddings, Birthdays & Corporate Events · Order Online, WhatsApp, Deliveroo & Talabat · Handcrafted Truffles & Chocolates · Custom Orders for Weddings, Birthdays & Corporate Events · Order Online, WhatsApp, Deliveroo & Talabat · Handcrafted Truffles & Chocolates · Custom Orders for Weddings, Birthdays & Corporate Events · Order Online, WhatsApp, Deliveroo & Talabat · Handcrafted Truffles & Chocolates · Custom Orders for Weddings, Birthdays & Corporate Events · Order Online, WhatsApp, Deliveroo & Talabat ·
+    - paragraph [ref=e6]: Handcrafted Truffles & Chocolates · Custom Orders for Weddings, Birthdays & Corporate Events · Order Online, WhatsApp, Deliveroo & Talabat
+  - navigation [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - link "Our Chocolates" [ref=e10] [cursor=pointer]:
+          - /url: "#chocolates"
+        - link "Gift Boxes" [ref=e11] [cursor=pointer]:
+          - /url: "#gift-boxes"
+      - link "Posa Rosa home":
+        - /url: /
+        - img "Posa Rosa"
+      - generic [ref=e12]:
+        - link "Shop" [ref=e13] [cursor=pointer]:
+          - /url: /shop
+        - link "Order" [ref=e14] [cursor=pointer]:
+          - /url: https://wa.me/971501234567?text=Hi!%20I'd%20like%20to%20order%20from%20Posa%20Rosa%20%F0%9F%A6%8B
+        - link "About" [ref=e15] [cursor=pointer]:
+          - /url: "#about"
+        - link "Cart" [ref=e16] [cursor=pointer]:
+          - /url: /cart
+          - img [ref=e17]
+  - main [ref=e20]:
+    - generic [ref=e21]:
+      - generic:
+        - img
+      - generic:
+        - img
+      - generic:
+        - img
+      - generic [ref=e24]:
+        - paragraph [ref=e25]: Posa Rosa
+        - heading "Born to be Beautiful" [level=1] [ref=e26]:
+          - text: Born to be
+          - emphasis [ref=e27]: Beautiful
+        - paragraph [ref=e28]: Handcrafted butterfly chocolates · Abu Dhabi
+        - generic [ref=e29]:
+          - link "Order on WhatsApp" [ref=e30] [cursor=pointer]:
+            - /url: https://wa.me/971501234567?text=Hi!%20I'd%20like%20to%20order%20from%20Posa%20Rosa%20%F0%9F%A6%8B
+            - img [ref=e31]
+            - text: Order on WhatsApp
+          - link "Explore Collection" [ref=e34] [cursor=pointer]:
+            - /url: "#chocolates"
+    - generic [ref=e37]: BUTTERFLY CHOCOLATES · HANDCRAFTED · ABU DHABI · KINDER · MATCHA · RED VELVET · S'MORES · WHITE CHOCOLATE · MILK CHOCOLATE · DARK CHOCOLATE · BUTTERFLY CHOCOLATES · HANDCRAFTED · ABU DHABI · KINDER · MATCHA · RED VELVET · S'MORES · WHITE CHOCOLATE · MILK CHOCOLATE · DARK CHOCOLATE · BUTTERFLY CHOCOLATES · HANDCRAFTED · ABU DHABI · KINDER · MATCHA · RED VELVET · S'MORES · WHITE CHOCOLATE · MILK CHOCOLATE · DARK CHOCOLATE · BUTTERFLY CHOCOLATES · HANDCRAFTED · ABU DHABI · KINDER · MATCHA · RED VELVET · S'MORES · WHITE CHOCOLATE · MILK CHOCOLATE · DARK CHOCOLATE ·
+    - heading "Our Butterflies" [level=2] [ref=e39]
+    - generic [ref=e45]:
+      - paragraph [ref=e46]: The Posa Rosa Experience
+      - heading "Every Bite Tells a Story" [level=2] [ref=e47]:
+        - text: Every Bite
+        - emphasis [ref=e48]: Tells a Story
+      - link "Order Now on WhatsApp" [ref=e49] [cursor=pointer]:
+        - /url: https://wa.me/971501234567?text=Hi!%20I'd%20like%20to%20order%20from%20Posa%20Rosa%20%F0%9F%A6%8B
+    - generic [ref=e51]:
+      - img "Posa Rosa Gift Box" [ref=e53]
+      - generic [ref=e54]:
+        - paragraph [ref=e55]: Gift & Celebrate
+        - heading "The Perfect Gift" [level=2] [ref=e56]:
+          - text: The Perfect
+          - emphasis [ref=e57]: Gift
+        - paragraph [ref=e58]: Custom gift boxes for Eid, weddings, birthdays & every celebration worth remembering. Each box is assembled by hand with love — filled with butterfly chocolates and wrapped with care.
+        - generic [ref=e59]:
+          - generic [ref=e62]: Eid & Ramadan Gifts
+          - generic [ref=e65]: Wedding Favours
+          - generic [ref=e68]: Birthday Boxes
+          - generic [ref=e71]: Corporate Gifting
+        - link "Order a Gift Box on WhatsApp" [ref=e72] [cursor=pointer]:
+          - /url: https://wa.me/971501234567?text=Hi!%20I'd%20like%20to%20order%20a%20gift%20box%20from%20Posa%20Rosa%20%F0%9F%A6%8B%F0%9F%8E%81
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - paragraph [ref=e76]: Simple & Sweet
+        - heading "How to Order" [level=2] [ref=e77]
+      - generic [ref=e78]:
+        - generic [ref=e79]:
+          - generic [ref=e80]: "01"
+          - heading "Message us on WhatsApp" [level=3] [ref=e82]
+          - paragraph [ref=e83]: Send us a message — no calls please. We're here 9AM to 8PM, seven days a week.
+        - generic [ref=e84]:
+          - generic [ref=e85]: "02"
+          - heading "Choose your butterflies" [level=3] [ref=e87]
+          - paragraph [ref=e88]: Pick from Kinder, Matcha, Red Velvet, S'mores, Cappuccino, and more. Mix and match freely.
+        - generic [ref=e89]:
+          - generic [ref=e90]: "03"
+          - heading "We deliver to your door" [level=3] [ref=e92]
+          - paragraph [ref=e93]: Fresh, handcrafted, and beautifully packaged. Delivered across Abu Dhabi.
+      - link "Start Your Order" [ref=e95] [cursor=pointer]:
+        - /url: https://wa.me/971501234567?text=Hi!%20I'd%20like%20to%20order%20from%20Posa%20Rosa%20%F0%9F%A6%8B
+        - img [ref=e96]
+        - text: Start Your Order
+    - generic [ref=e100]:
+      - generic [ref=e101]:
+        - paragraph [ref=e102]: Our Story
+        - heading "Born in Abu Dhabi" [level=2] [ref=e103]:
+          - text: Born in
+          - emphasis [ref=e104]: Abu Dhabi
+        - paragraph [ref=e105]: Posa Rosa was born from a love of beautiful things. Every butterfly is handcrafted with care, shaped with precision, and filled with the finest ingredients. From Kinder to Matcha, Red Velvet to S'mores — there's a butterfly for every taste.
+        - paragraph [ref=e106]: Made in small batches, by hand, with intention. Because we believe the most beautiful moments deserve the most beautiful chocolate.
+        - generic [ref=e109]: Handcrafted with love
+      - img "One classic bite at a time" [ref=e112]
+  - contentinfo [ref=e114]:
+    - generic [ref=e115]:
+      - generic [ref=e116]:
+        - img "Posa Rosa"
+      - paragraph [ref=e117]: Born to be Beautiful
+      - navigation "Footer navigation" [ref=e118]:
+        - list [ref=e119]:
+          - listitem [ref=e120]:
+            - link "Instagram" [ref=e121] [cursor=pointer]:
+              - /url: https://instagram.com/posa.rosa.uae
+          - listitem [ref=e122]:
+            - link "WhatsApp" [ref=e123] [cursor=pointer]:
+              - /url: https://wa.me/971501234567?text=Hi!%20I'd%20like%20to%20order%20from%20Posa%20Rosa%20%F0%9F%A6%8B
+          - listitem [ref=e124]:
+            - link "Deliveroo" [ref=e125] [cursor=pointer]:
+              - /url: https://deliveroo.ae
+          - listitem [ref=e126]:
+            - link "talabat" [ref=e127] [cursor=pointer]:
+              - /url: https://www.talabat.com
+      - paragraph [ref=e129]: Open 9AM – 8PM · Every Day
+      - paragraph [ref=e130]: No calls please — WhatsApp only
+      - paragraph [ref=e131]: © 2025 Posa Rosa · Abu Dhabi
