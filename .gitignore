@@ -28,3 +28,7 @@ capturefinal.mjs
 
 # Local Netlify folder
 .netlify
+
+# QA screenshots + Playwright artifacts (local review only)
+qa-screenshots
+.playwright-mcp

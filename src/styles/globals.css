@@ -30,17 +30,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Marquee animations */
-@keyframes ticker {
-  from { transform: translateX(0) }
-  to   { transform: translateX(-50%) }
-}
-
-@keyframes marquee-dark {
-  from { transform: translateX(0) }
-  to   { transform: translateX(-50%) }
-}
-
 /* Scroll anchor offset for fixed headers */
 section[id] {
   scroll-margin-top: calc(var(--bar-h) + var(--nav-h));

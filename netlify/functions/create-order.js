@@ -158,12 +158,31 @@ exports.handler = async (event) => {
       quantity:   i.quantity,
     }))
 
-  const noteParts = [
-    delivery.notes,
-    delivery.mapsLink ? `Maps: ${delivery.mapsLink}` : null,
-    `Time: ${delivery.timeSlot}`,
-    `Area: ${delivery.area}`,
-  ].filter(Boolean)
+  // Fulfillment info — must be the first thing the manager sees on the order
+  const isPickup = delivery.fulfillmentType === 'pickup'
+
+  const BRANCH_MAPS = {
+    'Abu Dhabi University':       'https://www.google.com/maps/search/Para+Cafe+Abu+Dhabi+University+UAE',
+    'Rabdan Mall - Ground Floor': 'https://www.google.com/maps/search/Para+Cafe+Rabdan+Mall+Abu+Dhabi',
+  }
+
+  const noteLines = isPickup
+    ? [
+        `⚠ FULFILLMENT: PICKUP — ${delivery.branch}`,
+        `DATE: ${delivery.date}`,
+        `TIME: ${delivery.timeSlot}`,
+        BRANCH_MAPS[delivery.branch] ? `BRANCH MAPS: ${BRANCH_MAPS[delivery.branch]}` : null,
+        delivery.notes ? `NOTES: ${delivery.notes}` : null,
+      ]
+    : [
+        `⚠ FULFILLMENT: DELIVERY`,
+        `DATE: ${delivery.date}`,
+        `TIME: ${delivery.timeSlot}`,
+        `ADDRESS: ${delivery.address}`,
+        `AREA: ${delivery.area}`,
+        delivery.mapsLink ? `MAPS: ${delivery.mapsLink}` : null,
+        delivery.notes ? `NOTES: ${delivery.notes}` : null,
+      ]
 
   const orderBody = {
     order: {
@@ -175,14 +194,15 @@ exports.handler = async (event) => {
       },
       shipping_address: {
         name:     customer.name,
-        address1: delivery.address,
+        address1: isPickup ? `PICKUP — ${delivery.branch}` : delivery.address,
         city:     'Abu Dhabi',
         country:  'AE',
         phone,
       },
       financial_status: 'pending',
-      note:             noteParts.join(' | '),
+      note:             noteLines.filter(Boolean).join('\n'),
       tags:             'posa-rosa-website',
+      send_receipt:     true,   // Shopify emails its built-in order confirmation to the customer
     },
   }
 
@@ -227,14 +247,16 @@ exports.handler = async (event) => {
         customerName:     customer.name,
         customerPhone:    phone,
         customerEmail:    customer.email,
-        address:          delivery.address,
-        area:             delivery.area,
+        fulfillmentType:  isPickup ? 'pickup' : 'delivery',
+        branch:           isPickup ? (delivery.branch || '') : '',
+        address:          delivery.address || '',
+        area:             delivery.area || '',
         deliveryDate:     delivery.date,
         deliveryTimeSlot: delivery.timeSlot,
         notes:            delivery.notes || '',
         googleMapsLink:   delivery.mapsLink || '',
         items:            (items || []).map(i => ({ title: i.name, quantity: i.quantity, price: i.price })),
-        deliveryFee:      35,
+        deliveryFee:      isPickup ? 0 : 35,
         subtotal,
         total,
         createdAt:        new Date().toISOString(),

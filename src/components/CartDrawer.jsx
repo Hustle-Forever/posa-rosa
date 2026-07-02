@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '../context/CartContext'
+import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock'
 
 const DELIVERY_FEE = 35
 
@@ -9,12 +10,11 @@ export default function CartDrawer() {
   const { items, cartTotal, cartCount, removeFromCart, updateQuantity, closeDrawer, drawerOpen } = useCart()
   const navigate = useNavigate()
 
-  // Lock body scroll when open
+  // Lock body scroll while open (see scrollLock.js for why this is counted)
   useEffect(() => {
     if (drawerOpen) {
-      const prev = document.body.style.overflow
-      document.body.style.overflow = 'hidden'
-      return () => { document.body.style.overflow = prev }
+      lockBodyScroll()
+      return unlockBodyScroll
     }
   }, [drawerOpen])
 

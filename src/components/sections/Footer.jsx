@@ -1,7 +1,7 @@
 const WA = 'https://wa.me/971503509459?text=' + encodeURIComponent("Hi! I'd like to order from Posa Rosa 🦋")
 
 const LINKS = [
-  { label: 'Instagram',  href: 'https://instagram.com/posa.rosa.uae' },
+  { label: 'Instagram',  href: 'https://www.instagram.com/posarosa.ae/' },
   { label: 'WhatsApp',   href: WA },
   { label: 'Deliveroo',  href: 'https://deliveroo.ae' },
   { label: 'talabat',    href: 'https://www.talabat.com' },
@@ -19,7 +19,7 @@ export default function Footer() {
         {/* Logo */}
         <div style={{ marginBottom: 'clamp(2rem, 4vw, 3.5rem)' }}>
           <img
-            src="/assets/logo/main-logo.svg"
+            src="/assets/logo/logo.png"
             alt="Posa Rosa"
             style={{
               height: '56px',

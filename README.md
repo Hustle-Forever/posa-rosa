@@ -130,6 +130,16 @@ The home page was **not redesigned**. An accidental change (replacing `Products`
 
 The wholesale/custom orders feature was removed at the client's request: `src/pages/WholesalePage.jsx` deleted, `/wholesale` route removed from `App.jsx`, and the Wholesale link removed from the navbar (desktop + mobile menu).
 
+### Bug fixes (July 2026)
+
+1. **Home hero button** — the filled hero CTA is now **"Shop Now" → `/shop`** (was "Order on WhatsApp"). All other WhatsApp buttons (navbar Order, HowToOrder, GiftBoxes, footer, Contact) are unchanged.
+2. **Scroll freeze after cart drawer / product modal** — the drawer and modal each saved-and-restored `document.body.style.overflow`, so when they overlapped (Add to Cart closes the modal *while* opening the drawer) a stale `hidden` could be restored and freeze scrolling site-wide. Both now use a reference-counted lock (`src/lib/scrollLock.js`), and a `ScrollReset` component in `App.jsx` clears any leftover lock and scrolls to top on every route change.
+3. **Marquee stops / gaps** — the announcement bar and marquee strip were CSS-keyframe animations translating a 4-copy track by −50%; on viewports wider than ~2150px the bar emptied near each cycle end, and iOS Safari can pause compositor animations inside `position:fixed` elements. Replaced with a shared `requestAnimationFrame`-driven `src/components/Marquee.jsx` (6 copies, modulo wrap) that loops seamlessly and can't stall. The unused `ticker`/`marquee-dark` keyframes were removed from `globals.css`.
+4. **White logo background** — `main-logo.svg` was a Canva export drawing the wordmark via an SVG `feColorMatrix` luminance mask over an embedded PNG that has an opaque background; browsers that fail that mask+filter combo (notably Safari) render the raw PNG as a white box. The correctly-masked result was baked into a real transparent PNG (`public/assets/logo/logo.png`, 512×512) now used by the navbar and footer.
+5. **QA audit fixes** — shop cards rendered `<img src="">` for the 7 Shopify products that have no image (React error, broken-image icons); they now show a graceful placeholder like the product modal. `index.html` `lang` fixed from `pt-BR` to `en`. Note: those 7 products still need photos uploaded in Shopify.
+
+QA screenshots (mobile 390px + desktop 1440px, before/after) are in `qa-screenshots/` (not for deployment).
+
 ### Needs Natinael's input before going live
 
 - WhatsApp number: `+971500000000` is a placeholder in About, Contact pages → replace with real number.

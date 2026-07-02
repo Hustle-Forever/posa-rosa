@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 
 const WA_URL  = 'https://wa.me/971500000000?text=' + encodeURIComponent("Hi! I'd like to get in touch with Posa Rosa 🦋")
 const EMAIL   = 'hello@posarosa.ae'
-const INSTA   = 'https://instagram.com/posarosa'
+const INSTA   = 'https://www.instagram.com/posarosa.ae/'
 
 function fade(delay = 0) {
   return {

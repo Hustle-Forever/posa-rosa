@@ -1,3 +1,5 @@
+import Marquee from '../Marquee'
+
 const TEXT = 'Handcrafted Truffles & Chocolates · Custom Orders for Weddings, Birthdays & Corporate Events · Order Online, WhatsApp, Deliveroo & Talabat · '
 
 export default function AnnouncementBar() {
@@ -16,27 +18,17 @@ export default function AnnouncementBar() {
         alignItems: 'center',
       }}
     >
-      <div
-        aria-hidden="true"
-        style={{
-          display: 'inline-flex',
-          whiteSpace: 'nowrap',
-          animation: 'marquee-dark 60s linear infinite',
-          willChange: 'transform',
+      <Marquee
+        text={TEXT}
+        speed={36}
+        spanStyle={{
+          fontFamily: 'var(--font-sans)',
+          fontSize: '0.67rem',
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase',
+          color: '#FDF6F0',
         }}
-      >
-        <span
-          style={{
-            fontFamily: 'var(--font-sans)',
-            fontSize: '0.67rem',
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            color: '#FDF6F0',
-          }}
-        >
-          {TEXT}{TEXT}{TEXT}{TEXT}
-        </span>
-      </div>
+      />
       <p className="sr-only">
         Handcrafted Truffles & Chocolates · Custom Orders for Weddings, Birthdays & Corporate Events · Order Online, WhatsApp, Deliveroo & Talabat
       </p>

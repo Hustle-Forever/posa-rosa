@@ -69,7 +69,7 @@ export default function Navbar() {
           }}
         >
           <img
-            src="/assets/logo/main-logo.svg"
+            src="/assets/logo/logo.png"
             alt="Posa Rosa"
             style={{
               height: '105px', width: 'auto',

@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { CartProvider }  from './context/CartContext'
 import AnnouncementBar   from './components/sections/AnnouncementBar'
 import Navbar            from './components/sections/Navbar'
@@ -11,10 +12,23 @@ import CheckoutPage           from './pages/CheckoutPage'
 import OrderConfirmationPage   from './pages/OrderConfirmationPage'
 import AboutPage         from './pages/AboutPage'
 import ContactPage       from './pages/ContactPage'
+import { resetBodyScroll } from './lib/scrollLock'
+
+// On every route change: clear any leftover body scroll lock (modal/drawer)
+// and start the new page at the top. Hash links keep native anchor scrolling.
+function ScrollReset() {
+  const { pathname, hash } = useLocation()
+  useEffect(() => {
+    resetBodyScroll()
+    if (!hash) window.scrollTo(0, 0)
+  }, [pathname, hash])
+  return null
+}
 
 export default function App() {
   return (
     <CartProvider>
+      <ScrollReset />
       <AnnouncementBar />
       <Navbar />
       <CartDrawer />

@@ -17,6 +17,18 @@ const TIME_SLOTS = [
 
 const DELIVERY_FEE = 35
 
+// Para Café pickup branches — maps links match the About page exactly
+const BRANCHES = [
+  {
+    name: 'Abu Dhabi University',
+    mapsLink: 'https://www.google.com/maps/search/Para+Cafe+Abu+Dhabi+University+UAE',
+  },
+  {
+    name: 'Rabdan Mall - Ground Floor',
+    mapsLink: 'https://www.google.com/maps/search/Para+Cafe+Rabdan+Mall+Abu+Dhabi',
+  },
+]
+
 function tomorrowMin() {
   const d = new Date()
   d.setDate(d.getDate() + 1)
@@ -113,14 +125,29 @@ export default function CheckoutPage() {
   const [loading,     setLoading]     = useState(false)
   const [serverError, setServerError] = useState(null)
   const [errors,      setErrors]      = useState({})
+  const [fulfillment, setFulfillment] = useState('delivery')
+  const [branch,      setBranch]      = useState('')
   const [form, setForm] = useState({
     name: '', phone: '', email: '',
     address: '', area: '', date: '', timeSlot: '', notes: '', mapsLink: '',
   })
 
+  const isPickup    = fulfillment === 'pickup'
+  const deliveryFee = isPickup ? 0 : DELIVERY_FEE
+
   function set(key, val) {
     setForm(f => ({ ...f, [key]: val }))
     if (errors[key]) setErrors(e => ({ ...e, [key]: '' }))
+  }
+
+  function switchFulfillment(mode) {
+    setFulfillment(mode)
+    setErrors({})
+  }
+
+  function selectBranch(name) {
+    setBranch(name)
+    if (errors.branch) setErrors(e => ({ ...e, branch: '' }))
   }
 
   function validate() {
@@ -128,9 +155,13 @@ export default function CheckoutPage() {
     if (!form.name.trim())    e.name     = 'Your name is required'
     if (!form.phone.trim())   e.phone    = 'Phone number is required'
     if (!form.email.trim())   e.email    = 'Email address is required'
-    if (!form.address.trim()) e.address  = 'Street address is required'
-    if (!form.area)           e.area     = 'Please select your area'
-    if (!form.date)           e.date     = 'Please choose a delivery date'
+    if (isPickup) {
+      if (!branch)            e.branch   = 'Please select a branch'
+    } else {
+      if (!form.address.trim()) e.address = 'Street address is required'
+      if (!form.area)           e.area    = 'Please select your area'
+    }
+    if (!form.date)           e.date     = isPickup ? 'Please choose a pickup date' : 'Please choose a delivery date'
     if (!form.timeSlot)       e.timeSlot = 'Please select a time slot'
     setErrors(e)
     return Object.keys(e).length === 0
@@ -147,20 +178,27 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           customer: { name: form.name, phone: form.phone, email: form.email },
           delivery: {
-            address: form.address, area: form.area, date: form.date,
-            timeSlot: form.timeSlot, notes: form.notes, mapsLink: form.mapsLink,
+            fulfillmentType: fulfillment,
+            branch:   isPickup ? branch : '',
+            address:  isPickup ? '' : form.address,
+            area:     isPickup ? '' : form.area,
+            mapsLink: isPickup ? '' : form.mapsLink,
+            date: form.date, timeSlot: form.timeSlot, notes: form.notes,
           },
           items: items.map(i => ({
             variantId: i.variantId, quantity: i.quantity, name: i.name, price: i.price,
           })),
-          total: cartTotal + DELIVERY_FEE,
+          total: cartTotal + deliveryFee,
         }),
       })
       const data = await res.json()
       if (!data.success) throw new Error(data.error || 'Order failed')
       clearCart()
       navigate(`/order-confirmation?id=${data.orderNumber}`, {
-        state: { orderNumber: data.orderNumber, items: [...items], delivery: form },
+        state: {
+          orderNumber: data.orderNumber, items: [...items],
+          delivery: { ...form, fulfillmentType: fulfillment, branch },
+        },
       })
     } catch (err) {
       console.error('Checkout error:', err)
@@ -169,7 +207,7 @@ export default function CheckoutPage() {
     }
   }
 
-  const orderTotal = cartTotal + DELIVERY_FEE
+  const orderTotal = cartTotal + deliveryFee
 
   return (
     <motion.div
@@ -187,7 +225,8 @@ export default function CheckoutPage() {
         .co-place-btn { transition: background 0.28s ease, color 0.28s ease; }
         .co-place-btn:hover:not(:disabled) { background: var(--color-gold) !important; color: var(--color-dark) !important; }
         @media (max-width: 940px) {
-          .co-layout { flex-direction: column !important; }
+          /* stretch, not flex-start: in column mode the form column must fill the width */
+          .co-layout { flex-direction: column !important; align-items: stretch !important; }
           .co-sidebar { display: none !important; }
         }
         @media (max-width: 600px) {
@@ -226,6 +265,42 @@ export default function CheckoutPage() {
           Checkout
         </h1>
 
+        {/* Delivery / Pickup toggle */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2.75rem' }}>
+          <div style={{
+            display: 'flex', width: '100%', maxWidth: '340px',
+            background: '#fff', borderRadius: '100px',
+            border: '1px solid rgba(61,26,26,0.14)', padding: '4px',
+            boxShadow: '0 2px 16px rgba(61,26,26,0.05)',
+          }}>
+            {[
+              { key: 'delivery', label: 'Delivery' },
+              { key: 'pickup',   label: 'Pickup'   },
+            ].map(mode => {
+              const active = fulfillment === mode.key
+              return (
+                <button
+                  key={mode.key}
+                  type="button"
+                  onClick={() => switchFulfillment(mode.key)}
+                  aria-pressed={active}
+                  style={{
+                    flex: 1, padding: '0.72rem 0',
+                    border: 'none', borderRadius: '100px', cursor: 'pointer',
+                    background: active ? 'var(--color-dark)' : 'transparent',
+                    color: active ? 'var(--color-gold)' : 'rgba(61,26,26,0.55)',
+                    fontFamily: 'var(--font-sans)', fontSize: '0.72rem',
+                    letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600,
+                    transition: 'background 0.25s ease, color 0.25s ease',
+                  }}
+                >
+                  {mode.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         <div className="co-layout" style={{ display: 'flex', gap: '3rem', alignItems: 'flex-start' }}>
 
           {/* ── Form ── */}
@@ -250,31 +325,87 @@ export default function CheckoutPage() {
               </Field>
             </FormSection>
 
-            {/* 02 Delivery */}
-            <FormSection number="02" title="Delivery Details">
-              <Field label="Street Address" error={errors.address}>
-                <input className="co-input" type="text" placeholder="Villa 12, Street 5"
-                  value={form.address} onChange={e => set('address', e.target.value)}
-                  style={inputStyle(errors.address)} />
-              </Field>
+            {/* 02 Delivery / Pickup */}
+            <FormSection number="02" title={isPickup ? 'Pickup Details' : 'Delivery Details'}>
+              {isPickup ? (
+                <>
+                  <Field label="Pickup Branch" error={errors.branch}>
+                    <div className="co-time-slots" style={{ display: 'flex', gap: '0.75rem' }}>
+                      {BRANCHES.map(b => {
+                        const active = branch === b.name
+                        return (
+                          <button
+                            key={b.name}
+                            className="co-time-btn"
+                            type="button"
+                            onClick={() => selectBranch(b.name)}
+                            style={{
+                              flex: 1, padding: '0.75rem 0.875rem',
+                              border: `1px solid ${active ? 'var(--color-dark)' : 'rgba(61,26,26,0.18)'}`,
+                              background: active ? 'var(--color-dark)' : '#fff',
+                              color: active ? '#FDF6F0' : 'var(--color-dark)',
+                              borderRadius: '8px', cursor: 'pointer', textAlign: 'left',
+                              fontFamily: 'var(--font-sans)', transition: 'all 0.22s ease',
+                            }}
+                          >
+                            <div style={{ fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.03em' }}>{b.name}</div>
+                            <div style={{ fontSize: '0.66rem', opacity: 0.65, marginTop: '2px' }}>Para Café</div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </Field>
 
-              <Field label="Area" error={errors.area}>
-                <select
-                  className="co-input"
-                  value={form.area}
-                  onChange={e => set('area', e.target.value)}
-                  style={{
-                    ...inputStyle(errors.area), appearance: 'none',
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%233D1A1A' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: '2.5rem',
-                  }}
-                >
-                  <option value="">Select area</option>
-                  {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
-                </select>
-              </Field>
+                  {branch && (
+                    <a
+                      href={BRANCHES.find(b => b.name === branch).mapsLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        gap: '0.5rem', padding: '0.75rem 1.5rem', alignSelf: 'flex-start',
+                        border: '1px solid var(--color-dark)', borderRadius: '100px',
+                        background: 'transparent', color: 'var(--color-dark)',
+                        fontFamily: 'var(--font-sans)', fontSize: '0.7rem',
+                        letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600,
+                        textDecoration: 'none', transition: 'background 0.22s ease',
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" width="14" height="14">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                      </svg>
+                      Get Location
+                    </a>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Field label="Street Address" error={errors.address}>
+                    <input className="co-input" type="text" placeholder="Villa 12, Street 5"
+                      value={form.address} onChange={e => set('address', e.target.value)}
+                      style={inputStyle(errors.address)} />
+                  </Field>
 
-              <Field label="Delivery Date" error={errors.date}>
+                  <Field label="Area" error={errors.area}>
+                    <select
+                      className="co-input"
+                      value={form.area}
+                      onChange={e => set('area', e.target.value)}
+                      style={{
+                        ...inputStyle(errors.area), appearance: 'none',
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%233D1A1A' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+                        backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: '2.5rem',
+                      }}
+                    >
+                      <option value="">Select area</option>
+                      {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                  </Field>
+                </>
+              )}
+
+              <Field label={isPickup ? 'Pickup Date' : 'Delivery Date'} error={errors.date}>
                 <input className="co-input" type="date"
                   min={tomorrowMin()}
                   value={form.date} onChange={e => set('date', e.target.value)}
@@ -309,10 +440,10 @@ export default function CheckoutPage() {
                 </div>
               </Field>
 
-              <Field label="Delivery Notes (optional)">
+              <Field label={isPickup ? 'Notes (optional)' : 'Delivery Notes (optional)'}>
                 <textarea
                   className="co-input"
-                  placeholder="Building entrance, special delivery instructions..."
+                  placeholder={isPickup ? 'Anything we should know about your order...' : 'Building entrance, special delivery instructions...'}
                   value={form.notes}
                   onChange={e => set('notes', e.target.value)}
                   rows={3}
@@ -320,16 +451,18 @@ export default function CheckoutPage() {
                 />
               </Field>
 
-              <Field label="Paste your Google Maps location link (optional)">
-                <input
-                  className="co-input"
-                  type="url"
-                  placeholder="https://maps.app.goo.gl/..."
-                  value={form.mapsLink}
-                  onChange={e => set('mapsLink', e.target.value)}
-                  style={inputStyle()}
-                />
-              </Field>
+              {!isPickup && (
+                <Field label="Paste your Google Maps location link (optional)">
+                  <input
+                    className="co-input"
+                    type="url"
+                    placeholder="https://maps.app.goo.gl/..."
+                    value={form.mapsLink}
+                    onChange={e => set('mapsLink', e.target.value)}
+                    style={inputStyle()}
+                  />
+                </Field>
+              )}
             </FormSection>
 
             {/* 03 Payment */}
@@ -351,10 +484,10 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.86rem', fontWeight: 600, color: 'var(--color-dark)' }}>
-                    Cash on Delivery
+                    {isPickup ? 'Pay on Pickup' : 'Cash on Delivery'}
                   </p>
                   <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.5)' }}>
-                    Pay when your order arrives
+                    {isPickup ? 'Pay when you collect your order' : 'Pay when your order arrives'}
                   </p>
                 </div>
               </div>
@@ -385,6 +518,8 @@ export default function CheckoutPage() {
               items={items}
               cartTotal={cartTotal}
               orderTotal={orderTotal}
+              isPickup={isPickup}
+              deliveryFee={deliveryFee}
               loading={loading}
               serverError={serverError}
               errors={errors}
@@ -400,7 +535,7 @@ export default function CheckoutPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.5)' }}>
-              {items.length} item{items.length !== 1 ? 's' : ''} · Delivery AED {DELIVERY_FEE}
+              {items.length} item{items.length !== 1 ? 's' : ''} · {isPickup ? 'Pickup — Free' : `Delivery AED ${DELIVERY_FEE}`}
             </p>
             <p style={{ margin: 0, fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.4rem', fontWeight: 500, color: 'var(--color-dark)' }}>
               AED {orderTotal}
@@ -443,7 +578,7 @@ export default function CheckoutPage() {
 }
 
 // Extracted summary card so it can be used in sidebar
-function OrderSummaryCard({ items, cartTotal, orderTotal, loading, serverError, errors, onPlace }) {
+function OrderSummaryCard({ items, cartTotal, orderTotal, isPickup, deliveryFee, loading, serverError, errors, onPlace }) {
   return (
     <div style={{
       background: '#fff', borderRadius: '14px',
@@ -465,8 +600,12 @@ function OrderSummaryCard({ items, cartTotal, orderTotal, loading, serverError, 
           </p>
         ) : items.map(item => (
           <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-            <img src={item.image} alt={item.name}
-              style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
+            {item.image ? (
+              <img src={item.image} alt={item.name}
+                style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
+            ) : (
+              <div style={{ width: '50px', height: '50px', borderRadius: '6px', flexShrink: 0, background: 'rgba(61,26,26,0.05)' }} />
+            )}
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.78rem', fontWeight: 500, color: 'var(--color-dark)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {item.name}
@@ -491,8 +630,8 @@ function OrderSummaryCard({ items, cartTotal, orderTotal, loading, serverError, 
           <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', color: 'var(--color-dark)' }}>AED {cartTotal}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.55)' }}>Delivery</span>
-          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', color: 'var(--color-dark)' }}>AED {DELIVERY_FEE}</span>
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.55)' }}>{isPickup ? 'Pickup' : 'Delivery'}</span>
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', color: 'var(--color-dark)' }}>{isPickup ? 'Free' : `AED ${deliveryFee}`}</span>
         </div>
         <div style={{ height: '1px', background: 'rgba(61,26,26,0.09)' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>

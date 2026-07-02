@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { getProducts, normalizeProduct } from '../lib/shopify'
+import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock'
 
 // ─── PRODUCT MODAL ────────────────────────────────────────────────────────────
 
@@ -29,11 +30,10 @@ function ProductModal({ product, onClose }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  // Lock body scroll
+  // Lock body scroll while open (see scrollLock.js for why this is counted)
   useEffect(() => {
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = prev }
+    lockBodyScroll()
+    return unlockBodyScroll
   }, [])
 
   return (
@@ -257,18 +257,32 @@ function ProductCard({ product, onOpen }) {
       }}
     >
       {/* Photo — 75% of card */}
-      <div style={{ position: 'relative', paddingBottom: '100%', overflow: 'hidden', flexShrink: 0 }}>
-        <img
-          src={product.image}
-          alt={product.name}
-          loading="lazy"
-          className="shop-card-img"
-          style={{
+      <div style={{ position: 'relative', paddingBottom: '100%', overflow: 'hidden', flexShrink: 0, background: 'rgba(61,26,26,0.04)' }}>
+        {product.image ? (
+          <img
+            src={product.image}
+            alt={product.name}
+            loading="lazy"
+            className="shop-card-img"
+            style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%', objectFit: 'cover',
+              transition: 'transform 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+            }}
+          />
+        ) : (
+          <div style={{
             position: 'absolute', inset: 0,
-            width: '100%', height: '100%', objectFit: 'cover',
-            transition: 'transform 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-          }}
-        />
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="rgba(61,26,26,0.18)"
+              strokeWidth="1" width="40" height="40">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </div>
+        )}
         {/* Collection badge */}
         {product.collection && (
           <span style={{
