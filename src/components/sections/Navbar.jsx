@@ -13,7 +13,6 @@ const LEFT_LINKS = [
 
 const RIGHT_LINKS = [
   { label: 'Shop',      to: '/shop' },
-  { label: 'Wholesale', to: '/wholesale' },
   { label: 'About',     to: '/about' },
 ]
 
@@ -173,7 +172,6 @@ export default function Navbar() {
               { label: 'Our Chocolates', href: '/#chocolates' },
               { label: 'Gift Boxes',     href: '/#gift-boxes' },
               { label: 'Shop',           to: '/shop' },
-              { label: 'Wholesale',      to: '/wholesale' },
               { label: 'About',          to: '/about' },
               { label: 'Contact',        to: '/contact' },
               { label: 'Order on WhatsApp', href: WA, external: true },

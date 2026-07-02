@@ -11,7 +11,6 @@ import CheckoutPage           from './pages/CheckoutPage'
 import OrderConfirmationPage   from './pages/OrderConfirmationPage'
 import AboutPage         from './pages/AboutPage'
 import ContactPage       from './pages/ContactPage'
-import WholesalePage     from './pages/WholesalePage'
 
 export default function App() {
   return (
@@ -27,7 +26,6 @@ export default function App() {
         <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
         <Route path="/about"              element={<AboutPage />}            />
         <Route path="/contact"            element={<ContactPage />}          />
-        <Route path="/wholesale"          element={<WholesalePage />}        />
       </Routes>
       <Footer />
     </CartProvider>

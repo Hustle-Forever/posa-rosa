@@ -95,7 +95,6 @@ service cloud.firestore {
 |---|---|---|
 | `/about` | `src/pages/AboutPage.jsx` | Brand story, Para Café locations, contact form, brand values |
 | `/contact` | `src/pages/ContactPage.jsx` | WhatsApp CTA, email, Instagram, response time note |
-| `/wholesale` | `src/pages/WholesalePage.jsx` | Package cards (Café/Wedding/Birthday), custom order form |
 
 ### Shop page
 
@@ -119,7 +118,7 @@ service cloud.firestore {
 
 ### Navbar
 
-- Added: Shop, Wholesale, About, Contact links.
+- Added: Shop, About, Contact links.
 - "About" changed from a home-page anchor (`#about`) to a real page route (`/about`).
 - Cart icon always visible on all viewports.
 
@@ -127,9 +126,13 @@ service cloud.firestore {
 
 The home page was **not redesigned**. An accidental change (replacing `Products` with `HomeGallery`) was reverted. The home page is byte-for-byte identical to commit `83b5515`.
 
+### Wholesale feature removed (July 2026)
+
+The wholesale/custom orders feature was removed at the client's request: `src/pages/WholesalePage.jsx` deleted, `/wholesale` route removed from `App.jsx`, and the Wholesale link removed from the navbar (desktop + mobile menu).
+
 ### Needs Natinael's input before going live
 
-- WhatsApp number: `+971500000000` is a placeholder in About, Contact, Wholesale pages → replace with real number.
+- WhatsApp number: `+971500000000` is a placeholder in About, Contact pages → replace with real number.
 - Instagram handle: `@posarosa` on Contact page → confirm correct handle.
 - Email: `hello@posarosa.ae` on Contact page → confirm or update.
 - Para Café Google Maps embed URLs in About page → paste real embed URLs for Rabdan Mall and Abu Dhabi University.
