@@ -2,9 +2,14 @@ const domain = import.meta.env.VITE_SHOPIFY_STORE_DOMAIN
 const token = import.meta.env.VITE_SHOPIFY_STOREFRONT_TOKEN
 const endpoint = `https://${domain}/api/2024-01/graphql.json`
 
+// Debug logging only in local dev builds — never in production
+const DEBUG = import.meta.env.DEV
+
 async function storefront(query, variables = {}) {
-  console.log('[Shopify] endpoint :', endpoint)
-  console.log('[Shopify] token     :', token ? `${token.slice(0, 4)}...${token.slice(-4)}` : 'MISSING')
+  if (DEBUG) {
+    console.log('[Shopify] endpoint :', endpoint)
+    console.log('[Shopify] token     :', token ? `${token.slice(0, 4)}...${token.slice(-4)}` : 'MISSING')
+  }
 
   const res = await fetch(endpoint, {
     method: 'POST',
@@ -15,10 +20,11 @@ async function storefront(query, variables = {}) {
     body: JSON.stringify({ query, variables }),
   })
 
-  console.log('[Shopify] status    :', res.status, res.statusText)
-
   const text = await res.text()
-  console.log('[Shopify] body      :', text)
+  if (DEBUG) {
+    console.log('[Shopify] status    :', res.status, res.statusText)
+    console.log('[Shopify] body      :', text)
+  }
 
   let json
   try {

@@ -1,0 +1,53 @@
+rules_version = '2';
+
+// Posa Rosa — Firestore security rules
+//
+// The Netlify function (netlify/functions/create-order.js) writes orders with
+// the Firebase CLIENT SDK and no auth, so `create` must stay open — but it is
+// locked down to the exact document shape the function writes, and existing
+// orders can never be overwritten (setDoc on an existing ID counts as
+// `update`, which requires auth).
+//
+// Reading customer PII (names, phones, addresses) requires a signed-in
+// Firebase Auth user. Everything else in the database is denied.
+//
+// Paste into: Firebase Console → Firestore Database → Rules → Publish
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /orders/{orderId} {
+      // Public create only for documents matching the order shape.
+      allow create: if isValidOrder();
+
+      // Only authenticated (staff) users may read or update orders.
+      allow read, update: if request.auth != null;
+
+      // Orders are never deleted from the client.
+      allow delete: if false;
+    }
+
+    // Deny everything else.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidOrder() {
+      let d = request.resource.data;
+      return d.keys().hasAll([
+          'orderNumber', 'shopifyOrderId', 'status', 'customerName',
+          'customerPhone', 'fulfillmentType', 'items', 'total', 'createdAt'
+        ])
+        && d.orderNumber is string   && d.orderNumber.size() <= 20
+        && d.status == 'Confirmed'
+        && d.customerName is string  && d.customerName.size() > 0
+        && d.customerName.size() <= 120
+        && d.customerPhone is string && d.customerPhone.size() <= 20
+        && d.fulfillmentType in ['pickup', 'delivery']
+        && d.items is list           && d.items.size() > 0
+        && d.items.size() <= 50
+        && d.total is number         && d.total >= 0 && d.total <= 1000000
+        && d.createdAt is string;
+    }
+  }
+}
