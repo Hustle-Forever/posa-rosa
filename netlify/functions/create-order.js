@@ -11,9 +11,10 @@ const SHOPIFY_ORDERS_URL = `https://${SHOPIFY_STORE}/admin/api/2024-01/orders.js
 // ALLOWED_ORIGIN env var covers a future custom domain without a code change.
 const ALLOWED_ORIGINS = new Set(
   [
-    'https://posa-rosa.netlify.app',
-    'http://localhost:5173',   // vite dev
-    'http://localhost:8888',   // netlify dev
+    'https://famous-fox-da26ec.netlify.app', // actual production URL
+    'https://posa-rosa.netlify.app',          // future custom domain / alias
+    'http://localhost:5173',                  // vite dev
+    'http://localhost:8888',                  // netlify dev
     process.env.ALLOWED_ORIGIN,
   ].filter(Boolean)
 )

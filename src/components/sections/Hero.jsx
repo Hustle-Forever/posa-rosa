@@ -179,14 +179,14 @@ export default function Hero() {
           style={{
             fontFamily: 'var(--font-serif)',
             color: '#FDF6F0',
-            fontSize: 'clamp(4rem, 11.5vw, 9.5rem)',
+            fontSize: 'clamp(2.4rem, 7vw, 7.5rem)',
             fontWeight: 300,
             lineHeight: 0.98,
             letterSpacing: '-0.025em',
           }}
         >
-          Born to be<br />
-          <em style={{ fontStyle: 'italic', color: 'var(--color-pink)' }}>Beautiful</em>
+          Butterfly Chocolates<br />
+          <em style={{ fontStyle: 'italic', color: 'var(--color-pink)' }}>A Bite of Bliss</em>
         </h1>
 
         <p

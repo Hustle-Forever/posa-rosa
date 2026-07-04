@@ -42,7 +42,7 @@ export default function Footer() {
           marginBottom: 'clamp(2.5rem, 5vw, 4rem)',
           letterSpacing: '0.01em',
         }}>
-          Born to be Beautiful
+          A Bite of Bliss
         </p>
 
         {/* Links */}

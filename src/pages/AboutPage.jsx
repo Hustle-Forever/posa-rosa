@@ -287,7 +287,7 @@ export default function AboutPage() {
             letterSpacing: '0.04em', lineHeight: 1.2, margin: '0 0 2rem',
           }}
         >
-          Born to be Beautiful
+          A Bite of Bliss
         </motion.h2>
         <motion.div {...fade(0.15)} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
           {[
