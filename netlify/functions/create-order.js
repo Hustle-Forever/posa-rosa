@@ -136,6 +136,17 @@ function normalizeUAEPhone(raw) {
   return null
 }
 
+// ── Returning-customer helper ─────────────────────────────────────────────────
+
+// Shopify rejects inline customer creation when the phone already belongs to
+// an existing customer. Detect that specific error so we can retry.
+function isPhoneAlreadyTaken(shopifyErrorData) {
+  const errs = shopifyErrorData?.errors?.['customer.phone_number'] || []
+  return Array.isArray(errs) && errs.some(
+    e => typeof e === 'string' && e.includes('already been taken'),
+  )
+}
+
 // ── Input validation ─────────────────────────────────────────────────────────
 const MAX_ITEMS = 50
 const MAX_QTY   = 100
@@ -354,7 +365,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const res = await fetch(SHOPIFY_ORDERS_URL, {
+    let shopifyRes = await fetch(SHOPIFY_ORDERS_URL, {
       method: 'POST',
       headers: {
         'Content-Type':           'application/json',
@@ -363,15 +374,38 @@ exports.handler = async (event) => {
       body: JSON.stringify(orderBody),
     })
 
-    const data = await res.json()
+    let shopifyData = await shopifyRes.json()
 
-    if (!res.ok) {
+    // Returning customer: phone already belongs to an existing Shopify customer.
+    // The customer search API needs read_customers scope this token doesn't hold,
+    // so retry by omitting phone from the customer object — Shopify will then
+    // match/create by email. Phone is preserved in shipping_address and Firestore.
+    if (!shopifyRes.ok && shopifyRes.status === 422 && isPhoneAlreadyTaken(shopifyData)) {
+      console.log('[create-order] Phone already taken — retrying with email-only customer lookup')
+      const retryBody = {
+        order: {
+          ...orderBody.order,
+          customer: { first_name: customer.name, email: customer.email },
+        },
+      }
+      shopifyRes  = await fetch(SHOPIFY_ORDERS_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type':           'application/json',
+          'X-Shopify-Access-Token': token,
+        },
+        body: JSON.stringify(retryBody),
+      })
+      shopifyData = await shopifyRes.json()
+    }
+
+    if (!shopifyRes.ok) {
       // On 401, purge the cached token so the next request refetches
-      if (res.status === 401) {
+      if (shopifyRes.status === 401) {
         _cachedToken = null
         _tokenExpiry = 0
       }
-      console.error('[create-order] Shopify error:', res.status, JSON.stringify(data))
+      console.error('[create-order] Shopify error:', shopifyRes.status, JSON.stringify(shopifyData))
       return {
         statusCode: 502,
         headers: { ...CORS, 'Content-Type': 'application/json' },
@@ -385,11 +419,11 @@ exports.handler = async (event) => {
     // ── Firestore write (best-effort — does not fail the order) ──────────
     try {
       const subtotal = (items || []).reduce((sum, i) => sum + i.price * i.quantity, 0)
-      const orderId  = String(data.order.order_number)
+      const orderId  = String(shopifyData.order.order_number)
 
       await setDoc(doc(db, 'orders', orderId), {
         orderNumber:      orderId,
-        shopifyOrderId:   data.order.id,
+        shopifyOrderId:   shopifyData.order.id,
         status:           'Confirmed',
         customerName:     customer.name,
         customerPhone:    phone,
@@ -420,8 +454,8 @@ exports.handler = async (event) => {
       headers: { ...CORS, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         success:     true,
-        orderId:     data.order.id,
-        orderNumber: data.order.order_number,
+        orderId:     shopifyData.order.id,
+        orderNumber: shopifyData.order.order_number,
       }),
     }
   } catch (err) {
