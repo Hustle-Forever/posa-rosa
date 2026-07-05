@@ -104,8 +104,7 @@ function isPhoneAlreadyTaken(shopifyErrorData) {
 }
 
 // ── Delivery fee (server-side) ────────────────────────────────────────────────
-function computeDeliveryFee(isPickup, emirate) {
-  if (isPickup) return 0
+function computeDeliveryFee(emirate) {
   return emirate === 'Abu Dhabi' ? 35 : 40
 }
 
@@ -126,16 +125,11 @@ function validateOrder({ customer, delivery, items }) {
   if (!isStr(customer.phone, 30, 1)) return 'Phone number is required'
 
   if (typeof delivery !== 'object' || delivery === null) return 'Missing delivery details'
-  const isPickup = delivery.fulfillmentType === 'pickup'
-  if (!isPickup && delivery.fulfillmentType !== 'delivery') return 'Invalid fulfillment type'
+  if (delivery.fulfillmentType !== 'delivery') return 'Invalid fulfillment type'
   if (!isStr(delivery.date, 10) || !/^\d{4}-\d{2}-\d{2}$/.test(delivery.date)) return 'A valid date is required'
   if (!isStr(delivery.timeSlot, 60, 1)) return 'A time slot is required'
-  if (isPickup) {
-    if (!isStr(delivery.branch, 120, 1)) return 'A pickup branch is required'
-  } else {
-    if (!isStr(delivery.address, 300, 1)) return 'A delivery address is required'
-    if (!isStr(delivery.area, 80, 1))    return 'A delivery area is required'
-  }
+  if (!isStr(delivery.address, 300, 1)) return 'A delivery address is required'
+  if (!isStr(delivery.area, 80, 1))    return 'A delivery area is required'
   if (delivery.notes    != null && !isStr(delivery.notes, 1000))   return 'Notes are too long'
   if (delivery.mapsLink != null && !isStr(delivery.mapsLink, 500)) return 'Maps link is too long'
   if (delivery.emirate  != null && !isStr(delivery.emirate, 80))   return 'Invalid emirate'
@@ -225,9 +219,8 @@ exports.handler = async (event) => {
   }
 
   // Build Shopify line items — regular (variant) + custom (Mix Box)
-  const isPickup    = delivery.fulfillmentType === 'pickup'
   const emirate     = delivery.emirate || 'Abu Dhabi'
-  const deliveryFee = computeDeliveryFee(isPickup, emirate)
+  const deliveryFee = computeDeliveryFee(emirate)
 
   const lineItems = (items || []).reduce((acc, i) => {
     if (i.customItem === 'mix-box') {
@@ -246,11 +239,6 @@ exports.handler = async (event) => {
   }, [])
 
   // Build order note
-  const BRANCH_MAPS = {
-    'Abu Dhabi University':       'https://www.google.com/maps/search/Para+Cafe+Abu+Dhabi+University+UAE',
-    'Rabdan Mall - Ground Floor': 'https://www.google.com/maps/search/Para+Cafe+Rabdan+Mall+Abu+Dhabi',
-  }
-
   // Mix Box breakdown for note
   const mixBoxItems = (items || []).filter(i => i.customItem === 'mix-box')
   const mixBoxNoteLines = mixBoxItems.flatMap(i => [
@@ -258,27 +246,17 @@ exports.handler = async (event) => {
     ...(i.mixBoxFlavors || []).map(f => `  ${f.name} × ${f.qty}`),
   ])
 
-  const noteLines = isPickup
-    ? [
-        `⚠ FULFILLMENT: PICKUP — ${delivery.branch}`,
-        `DATE: ${delivery.date}`,
-        `TIME: ${delivery.timeSlot}`,
-        BRANCH_MAPS[delivery.branch] ? `BRANCH MAPS: ${BRANCH_MAPS[delivery.branch]}` : null,
-        delivery.notes ? `NOTES: ${delivery.notes}` : null,
-        mixBoxNoteLines.length > 0 ? '---' : null,
-        ...mixBoxNoteLines,
-      ]
-    : [
-        `⚠ FULFILLMENT: DELIVERY — ${emirate} · ${delivery.area}`,
-        `DELIVERY FEE: AED ${deliveryFee}`,
-        `DATE: ${delivery.date}`,
-        `TIME: ${delivery.timeSlot}`,
-        `ADDRESS: ${delivery.address}`,
-        delivery.mapsLink ? `MAPS: ${delivery.mapsLink}` : null,
-        delivery.notes ? `NOTES: ${delivery.notes}` : null,
-        mixBoxNoteLines.length > 0 ? '---' : null,
-        ...mixBoxNoteLines,
-      ]
+  const noteLines = [
+    `⚠ FULFILLMENT: DELIVERY — ${emirate} · ${delivery.area}`,
+    `DELIVERY FEE: AED ${deliveryFee}`,
+    `DATE: ${delivery.date}`,
+    `TIME: ${delivery.timeSlot}`,
+    `ADDRESS: ${delivery.address}`,
+    delivery.mapsLink ? `MAPS: ${delivery.mapsLink}` : null,
+    delivery.notes ? `NOTES: ${delivery.notes}` : null,
+    mixBoxNoteLines.length > 0 ? '---' : null,
+    ...mixBoxNoteLines,
+  ]
 
   const orderBody = {
     order: {
@@ -286,8 +264,8 @@ exports.handler = async (event) => {
       customer: { first_name: customer.name, email: customer.email, phone },
       shipping_address: {
         name:     customer.name,
-        address1: isPickup ? `PICKUP — ${delivery.branch}` : delivery.address,
-        city:     isPickup ? 'Abu Dhabi' : emirate,
+        address1: delivery.address,
+        city:     emirate,
         country:  'AE',
         phone,
       },
@@ -336,9 +314,8 @@ exports.handler = async (event) => {
         customerName:     customer.name,
         customerPhone:    phone,
         customerEmail:    customer.email,
-        fulfillmentType:  isPickup ? 'pickup' : 'delivery',
-        emirate:          isPickup ? '' : emirate,
-        branch:           isPickup ? (delivery.branch || '') : '',
+        fulfillmentType:  'delivery',
+        emirate,
         address:          delivery.address || '',
         area:             delivery.area || '',
         deliveryDate:     delivery.date,

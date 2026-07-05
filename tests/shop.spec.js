@@ -52,29 +52,9 @@ test.describe('Task 1 – Fulfillment selector', () => {
     await page.reload()
   })
 
-  test('PICKUP: clicking Pickup skips to products view', async ({ page }, testInfo) => {
-    await page.goto('/shop')
-    await page.evaluate(() => sessionStorage.removeItem('posa-rosa-fulfillment'))
-    await page.reload()
-
-    await expect(page.getByTestId('btn-pickup')).toBeVisible()
-    await expect(page.getByTestId('btn-delivery')).toBeVisible()
-
-    await page.getByTestId('btn-pickup').click()
-
-    // Fulfillment step is gone — summary chip + filter bar appears
-    await expect(page.getByTestId('btn-pickup')).toBeHidden()
-    await expect(page.getByText(/pickup at para café/i)).toBeVisible()
-    await expect(page.getByText(/free/i)).toBeVisible()
-
-    await page.screenshot({ path: ssPath(`${testInfo.project.name}-pickup-flow`) })
-  })
-
   test('DELIVERY Abu Dhabi: emirate→area flow, fee is AED 35', async ({ page }, testInfo) => {
     // beforeEach already navigated to /shop with clean sessionStorage
-    await page.getByTestId('btn-delivery').click()
-
-    // Wait for emirate step, then click Abu Dhabi
+    // Shop now starts directly at emirate selection (no pickup/delivery toggle)
     await expect(page.getByTestId('emirate-Abu-Dhabi')).toBeVisible()
     await page.getByTestId('emirate-Abu-Dhabi').click()
 
@@ -95,9 +75,6 @@ test.describe('Task 1 – Fulfillment selector', () => {
 
   test('DELIVERY Dubai: emirate→area flow, fee is AED 40', async ({ page }, testInfo) => {
     // beforeEach already navigated to /shop with clean sessionStorage
-    await page.getByTestId('btn-delivery').click()
-
-    // Wait for emirate step, then click Dubai
     await expect(page.getByTestId('emirate-Dubai')).toBeVisible()
     await page.getByTestId('emirate-Dubai').click()
 
@@ -117,11 +94,7 @@ test.describe('Task 1 – Fulfillment selector', () => {
   })
 
   test('DELIVERY "Other" area: shows custom text input', async ({ page }, testInfo) => {
-    await page.goto('/shop')
-    await page.evaluate(() => sessionStorage.removeItem('posa-rosa-fulfillment'))
-    await page.reload()
-
-    await page.getByTestId('btn-delivery').click()
+    // beforeEach already navigated with clean sessionStorage; emirate step is first
     await page.getByTestId('emirate-Dubai').click()
     await page.getByTestId('area-Other').click()
 
@@ -136,29 +109,28 @@ test.describe('Task 1 – Fulfillment selector', () => {
     await expect(continueBtn).toBeEnabled()
     await continueBtn.click()
 
-    // Summary chip shows the custom area name and fee
+    // Summary chip shows the custom area name and fee; emirate selector is gone
     await expect(page.getByText(/Delivery to Dubai/i)).toBeVisible()
     await expect(page.getByText(/Palm Jumeirah/i)).toBeVisible()
     await expect(page.getByText(/AED 40/)).toBeVisible()
-    await expect(page.getByTestId('btn-delivery')).toBeHidden()
+    await expect(page.getByTestId('emirate-Dubai')).toBeHidden()
 
     await page.screenshot({ path: ssPath(`${testInfo.project.name}-delivery-other-area`) })
   })
 
-  test('Change link resets to fulfillment step', async ({ page }) => {
+  test('Change link resets to emirate selection', async ({ page }) => {
     await page.goto('/shop')
     await page.evaluate(() => {
-      sessionStorage.setItem('posa-rosa-fulfillment', JSON.stringify({ type: 'pickup', emirate: '', area: '' }))
+      sessionStorage.setItem('posa-rosa-fulfillment', JSON.stringify({ type: 'delivery', emirate: 'Dubai', area: 'Marina' }))
     })
     await page.reload()
 
     // Fulfillment summary chip should show (skipped selector step)
-    await expect(page.getByText(/Pickup at Para Café/i)).toBeVisible({ timeout: 8_000 })
-    await expect(page.getByTestId('btn-pickup')).toBeHidden()
+    await expect(page.getByText(/Delivery to Dubai/i)).toBeVisible({ timeout: 8_000 })
 
-    // Click Change → back to selector
+    // Click Change → back to emirate selection
     await page.getByText('Change').click()
-    await expect(page.getByTestId('btn-delivery')).toBeVisible()
+    await expect(page.getByTestId('emirate-Dubai')).toBeVisible()
   })
 })
 
@@ -166,10 +138,10 @@ test.describe('Task 1 – Fulfillment selector', () => {
 
 test.describe('Task 2 – Mix Box', () => {
   test.beforeEach(async ({ page }) => {
-    // Set pickup so we skip to products step
+    // Set a valid delivery session so the shop skips to products step
     await page.goto('/shop')
     await page.evaluate(() => {
-      sessionStorage.setItem('posa-rosa-fulfillment', JSON.stringify({ type: 'pickup', emirate: '', area: '' }))
+      sessionStorage.setItem('posa-rosa-fulfillment', JSON.stringify({ type: 'delivery', emirate: 'Abu Dhabi', area: 'Al Mushrif' }))
     })
     await page.reload()
     // Mix Box card is always rendered once products step is shown
@@ -264,7 +236,7 @@ test('No critical console errors on shop page', async ({ page }) => {
 
   await page.goto('/shop')
   await page.evaluate(() => {
-    sessionStorage.setItem('posa-rosa-fulfillment', JSON.stringify({ type: 'pickup', emirate: '', area: '' }))
+    sessionStorage.setItem('posa-rosa-fulfillment', JSON.stringify({ type: 'delivery', emirate: 'Abu Dhabi', area: 'Al Mushrif' }))
   })
   await page.reload()
   await page.waitForTimeout(3000)

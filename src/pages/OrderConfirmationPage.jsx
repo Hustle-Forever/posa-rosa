@@ -2,11 +2,6 @@ import { useLocation, useSearchParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CheckCircle } from 'lucide-react'
 
-const BRANCH_MAPS = {
-  'Abu Dhabi University':       'https://www.google.com/maps/search/Para+Cafe+Abu+Dhabi+University+UAE',
-  'Rabdan Mall - Ground Floor': 'https://www.google.com/maps/search/Para+Cafe+Rabdan+Mall+Abu+Dhabi',
-}
-
 export default function OrderConfirmationPage() {
   const { state } = useLocation()
   const [searchParams] = useSearchParams()
@@ -176,114 +171,42 @@ export default function OrderConfirmationPage() {
               color: 'var(--color-dark)',
               margin: '0 0 1.25rem',
             }}>
-              {delivery.fulfillmentType === 'pickup' ? 'Pickup Details' : 'Delivery Details'}
+              Delivery Details
             </h3>
 
-            {delivery.fulfillmentType === 'pickup' ? (
-              <>
-                {[
-                  { label: 'Branch', value: delivery.branch },
-                  { label: 'Date',   value: delivery.date },
-                  { label: 'Time',   value: delivery.timeSlot },
-                  delivery.notes ? { label: 'Notes', value: delivery.notes } : null,
-                ].filter(Boolean).map(row => (
-                  <div key={row.label} style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    gap: '1rem',
-                    padding: '0.5rem 0',
-                    borderBottom: '1px solid rgba(61,26,26,0.07)',
-                  }}>
-                    <span style={{
-                      fontFamily: 'var(--font-sans)',
-                      fontSize: '0.72rem',
-                      letterSpacing: '0.1em',
-                      textTransform: 'uppercase',
-                      color: 'rgba(61,26,26,0.46)',
-                      flexShrink: 0,
-                    }}>
-                      {row.label}
-                    </span>
-                    <span style={{
-                      fontFamily: 'var(--font-sans)',
-                      fontSize: '0.8rem',
-                      color: 'var(--color-dark)',
-                      textAlign: 'right',
-                    }}>
-                      {row.value}
-                    </span>
-                  </div>
-                ))}
-
-                {BRANCH_MAPS[delivery.branch] && (
-                  <div style={{ marginTop: '1.25rem' }}>
-                    <a
-                      href={BRANCH_MAPS[delivery.branch]}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.45rem',
-                        padding: '0.65rem 1.25rem',
-                        border: '1px solid var(--color-dark)',
-                        borderRadius: '100px',
-                        background: 'transparent',
-                        color: 'var(--color-dark)',
-                        fontFamily: 'var(--font-sans)',
-                        fontSize: '0.68rem',
-                        letterSpacing: '0.12em',
-                        textTransform: 'uppercase',
-                        fontWeight: 600,
-                        textDecoration: 'none',
-                      }}
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" width="13" height="13" aria-hidden="true">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                        <circle cx="12" cy="10" r="3" />
-                      </svg>
-                      Get Location
-                    </a>
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                {[
-                  { label: 'Address', value: `${delivery.address}, ${delivery.area}` },
-                  { label: 'Date',    value: delivery.date },
-                  { label: 'Time',    value: delivery.timeSlot },
-                  delivery.notes ? { label: 'Notes', value: delivery.notes } : null,
-                ].filter(Boolean).map(row => (
-                  <div key={row.label} style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    gap: '1rem',
-                    padding: '0.5rem 0',
-                    borderBottom: '1px solid rgba(61,26,26,0.07)',
-                  }}>
-                    <span style={{
-                      fontFamily: 'var(--font-sans)',
-                      fontSize: '0.72rem',
-                      letterSpacing: '0.1em',
-                      textTransform: 'uppercase',
-                      color: 'rgba(61,26,26,0.46)',
-                      flexShrink: 0,
-                    }}>
-                      {row.label}
-                    </span>
-                    <span style={{
-                      fontFamily: 'var(--font-sans)',
-                      fontSize: '0.8rem',
-                      color: 'var(--color-dark)',
-                      textAlign: 'right',
-                    }}>
-                      {row.value}
-                    </span>
-                  </div>
-                ))}
-              </>
-            )}
+            {[
+              { label: 'Address', value: `${delivery.address}, ${delivery.area}` },
+              { label: 'Date',    value: delivery.date },
+              { label: 'Time',    value: delivery.timeSlot },
+              delivery.notes ? { label: 'Notes', value: delivery.notes } : null,
+            ].filter(Boolean).map(row => (
+              <div key={row.label} style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: '1rem',
+                padding: '0.5rem 0',
+                borderBottom: '1px solid rgba(61,26,26,0.07)',
+              }}>
+                <span style={{
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: '0.72rem',
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: 'rgba(61,26,26,0.46)',
+                  flexShrink: 0,
+                }}>
+                  {row.label}
+                </span>
+                <span style={{
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: '0.8rem',
+                  color: 'var(--color-dark)',
+                  textAlign: 'right',
+                }}>
+                  {row.value}
+                </span>
+              </div>
+            ))}
           </motion.div>
         )}
 

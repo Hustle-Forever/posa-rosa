@@ -11,38 +11,12 @@ const BOX_PRICE  = 165
 const MIN_FLAVORS = 2
 const MAX_FLAVORS = 5
 
-// ─── DELIVERY ICON ────────────────────────────────────────────────────────────
-
-function DeliveryIcon() {
-  return (
-    <svg viewBox="0 0 48 48" fill="none" width="40" height="40" aria-hidden="true">
-      <rect x="4" y="16" width="28" height="20" rx="3" stroke="currentColor" strokeWidth="2"/>
-      <path d="M32 22h8l4 7v7h-12V22z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-      <circle cx="13" cy="38" r="4" stroke="currentColor" strokeWidth="2"/>
-      <circle cx="37" cy="38" r="4" stroke="currentColor" strokeWidth="2"/>
-      <path d="M8 22h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M8 27h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  )
-}
-
-function PickupIcon() {
-  return (
-    <svg viewBox="0 0 48 48" fill="none" width="40" height="40" aria-hidden="true">
-      <rect x="8" y="18" width="32" height="22" rx="3" stroke="currentColor" strokeWidth="2"/>
-      <path d="M16 18V14a8 8 0 1 1 16 0v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <circle cx="24" cy="29" r="3" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  )
-}
-
-// ─── FULFILLMENT SELECTOR ─────────────────────────────────────────────────────
+// ─── FULFILLMENT SELECTOR (Delivery-only: Emirate → Area) ────────────────────
 
 function FulfillmentSelector({ onComplete }) {
-  const [subStep,     setSubStep]     = useState('type')   // 'type' | 'emirate' | 'area'
-  const [selectedEm,  setSelectedEm]  = useState('')
+  const [selectedEm,   setSelectedEm]   = useState('')
   const [selectedArea, setSelectedArea] = useState('')
-  const [areaCustom,  setAreaCustom]  = useState('')
+  const [areaCustom,   setAreaCustom]   = useState('')
 
   const areaOptions = selectedEm ? (EMIRATE_AREAS[selectedEm] || []) : []
 
@@ -50,7 +24,6 @@ function FulfillmentSelector({ onComplete }) {
     setSelectedEm(em)
     setSelectedArea('')
     setAreaCustom('')
-    setSubStep('area')
   }
 
   function handleAreaContinue() {
@@ -70,7 +43,7 @@ function FulfillmentSelector({ onComplete }) {
 
       {/* Step indicator */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '2.5rem' }}>
-        {['Choose How', subStep !== 'type' ? 'Select Emirate' : null, subStep === 'area' ? 'Select Area' : null]
+        {['Select Emirate', selectedEm ? 'Select Area' : null]
           .filter(Boolean).map((label, i, arr) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{
@@ -89,110 +62,13 @@ function FulfillmentSelector({ onComplete }) {
 
       <AnimatePresence mode="wait">
 
-        {/* ── Step 1: Delivery or Pickup ── */}
-        {subStep === 'type' && (
-          <motion.div key="type"
-            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
-            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-              <h2 style={{
-                fontFamily: 'Cormorant Garamond, Georgia, serif',
-                fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 300,
-                color: '#3D1A1A', margin: '0 0 0.6rem', letterSpacing: '0.03em',
-              }}>
-                How would you like to receive your order?
-              </h2>
-              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.45)', letterSpacing: '0.06em' }}>
-                Select delivery or pickup to continue
-              </p>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-              {/* Delivery */}
-              <button
-                onClick={() => setSubStep('emirate')}
-                data-testid="btn-delivery"
-                style={{
-                  background: '#fff', border: '1.5px solid rgba(61,26,26,0.14)',
-                  borderRadius: '16px', padding: '2rem 1.5rem',
-                  cursor: 'pointer', textAlign: 'center',
-                  transition: 'border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease',
-                  boxShadow: '0 2px 16px rgba(61,26,26,0.05)',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = '#3D1A1A'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(61,26,26,0.12)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(61,26,26,0.14)'; e.currentTarget.style.boxShadow = '0 2px 16px rgba(61,26,26,0.05)'; e.currentTarget.style.transform = 'none' }}
-              >
-                <div style={{ color: '#3D1A1A' }}><DeliveryIcon /></div>
-                <div>
-                  <p style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.4rem', fontWeight: 400, color: '#3D1A1A', margin: '0 0 0.3rem' }}>
-                    Delivery
-                  </p>
-                  <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.66rem', color: 'rgba(61,26,26,0.45)', margin: 0, letterSpacing: '0.06em' }}>
-                    Delivered to your door
-                  </p>
-                </div>
-                <span style={{
-                  fontFamily: 'var(--font-sans)', fontSize: '0.62rem', fontWeight: 600,
-                  letterSpacing: '0.1em', textTransform: 'uppercase',
-                  color: 'var(--color-gold)', background: 'rgba(201,169,110,0.12)',
-                  padding: '0.25rem 0.75rem', borderRadius: '100px',
-                }}>
-                  From AED 35
-                </span>
-              </button>
-
-              {/* Pickup */}
-              <button
-                onClick={() => onComplete({ type: 'pickup', emirate: '', area: '' })}
-                data-testid="btn-pickup"
-                style={{
-                  background: '#fff', border: '1.5px solid rgba(61,26,26,0.14)',
-                  borderRadius: '16px', padding: '2rem 1.5rem',
-                  cursor: 'pointer', textAlign: 'center',
-                  transition: 'border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease',
-                  boxShadow: '0 2px 16px rgba(61,26,26,0.05)',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = '#3D1A1A'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(61,26,26,0.12)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(61,26,26,0.14)'; e.currentTarget.style.boxShadow = '0 2px 16px rgba(61,26,26,0.05)'; e.currentTarget.style.transform = 'none' }}
-              >
-                <div style={{ color: '#3D1A1A' }}><PickupIcon /></div>
-                <div>
-                  <p style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.4rem', fontWeight: 400, color: '#3D1A1A', margin: '0 0 0.3rem' }}>
-                    Pickup
-                  </p>
-                  <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.66rem', color: 'rgba(61,26,26,0.45)', margin: 0, letterSpacing: '0.06em' }}>
-                    Collect at Para Café
-                  </p>
-                </div>
-                <span style={{
-                  fontFamily: 'var(--font-sans)', fontSize: '0.62rem', fontWeight: 600,
-                  letterSpacing: '0.1em', textTransform: 'uppercase',
-                  color: '#3D1A1A', background: 'rgba(61,26,26,0.07)',
-                  padding: '0.25rem 0.75rem', borderRadius: '100px',
-                }}>
-                  Free
-                </span>
-              </button>
-            </div>
-          </motion.div>
-        )}
-
-        {/* ── Step 2: Emirate ── */}
-        {subStep === 'emirate' && (
+        {/* ── Step 1: Emirate ── */}
+        {!selectedEm && (
           <motion.div key="emirate"
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
-              <button onClick={() => setSubStep('type')}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.4rem', color: '#3D1A1A', display: 'flex', alignItems: 'center' }}>
-                <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
-                  <path d="M13 4l-6 6 6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
+            <div style={{ marginBottom: '2rem' }}>
               <div>
                 <h2 style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: 'clamp(1.5rem, 3.5vw, 2rem)', fontWeight: 300, color: '#3D1A1A', margin: 0 }}>
                   Which emirate are you in?
@@ -228,14 +104,14 @@ function FulfillmentSelector({ onComplete }) {
           </motion.div>
         )}
 
-        {/* ── Step 3: Area ── */}
-        {subStep === 'area' && (
+        {/* ── Step 2: Area ── */}
+        {selectedEm && (
           <motion.div key="area"
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-              <button onClick={() => setSubStep('emirate')}
+              <button onClick={() => setSelectedEm('')}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.4rem', color: '#3D1A1A', display: 'flex', alignItems: 'center' }}>
                 <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
                   <path d="M13 4l-6 6 6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
@@ -330,8 +206,7 @@ function FulfillmentSelector({ onComplete }) {
 
 function FulfillmentSummary({ data, onChange }) {
   if (!data) return null
-  const isPickup = data.type === 'pickup'
-  const fee = isPickup ? 0 : getDeliveryFee(data.emirate)
+  const fee = getDeliveryFee(data.emirate)
 
   return (
     <div style={{
@@ -346,10 +221,7 @@ function FulfillmentSummary({ data, onChange }) {
           background: 'var(--color-gold)', flexShrink: 0,
         }} />
         <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.68rem', color: '#3D1A1A', letterSpacing: '0.04em' }}>
-          {isPickup
-            ? 'Pickup at Para Café — Free'
-            : `Delivery to ${data.emirate}${data.area ? ` · ${data.area}` : ''} — AED ${fee}`
-          }
+          {`Delivery to ${data.emirate}${data.area ? ` · ${data.area}` : ''} — AED ${fee}`}
         </span>
       </div>
       <button onClick={onChange}
@@ -464,11 +336,14 @@ function MixBoxCard({ onOpen }) {
 
 // ─── MIX BOX MODAL ────────────────────────────────────────────────────────────
 
+const MIX_BOX_EXCLUDED_HANDLES = ['matcha-bottle']
+
 function MixBoxModal({ products, onClose }) {
   const { addToCart, openDrawer } = useCart()
   const [flavors, setFlavors] = useState({})  // { productId: qty }
   const [added,   setAdded]   = useState(false)
 
+  const flavorProducts  = products.filter(p => !MIX_BOX_EXCLUDED_HANDLES.includes(p.handle))
   const selectedEntries = Object.entries(flavors).filter(([, q]) => q > 0)
   const totalPcs        = selectedEntries.reduce((s, [, q]) => s + q, 0)
   const flavorCount     = selectedEntries.length
@@ -501,7 +376,7 @@ function MixBoxModal({ products, onClose }) {
   function handleAdd() {
     if (!isComplete) return
     const mixBoxFlavors = selectedEntries.map(([id, qty]) => ({
-      name: products.find(p => p.id === id)?.name || id,
+      name: flavorProducts.find(p => p.id === id)?.name || id,
       qty,
     }))
     addToCart({
@@ -615,7 +490,7 @@ function MixBoxModal({ products, onClose }) {
 
           {/* Flavor list */}
           <div style={{ padding: '0 1.75rem', display: 'flex', flexDirection: 'column', gap: '0' }}>
-            {products.map((product, i) => {
+            {flavorProducts.map((product, i) => {
               const qty      = flavors[product.id] || 0
               const selected = qty > 0
               const canInc   = totalPcs < BOX_SIZE && (selected || flavorCount < MAX_FLAVORS)
@@ -626,7 +501,7 @@ function MixBoxModal({ products, onClose }) {
                   style={{
                     display: 'flex', alignItems: 'center', gap: '0.875rem',
                     padding: '0.875rem 0',
-                    borderBottom: i < products.length - 1 ? '1px solid rgba(61,26,26,0.07)' : 'none',
+                    borderBottom: i < flavorProducts.length - 1 ? '1px solid rgba(61,26,26,0.07)' : 'none',
                     opacity: !selected && flavorCount >= MAX_FLAVORS ? 0.45 : 1,
                     transition: 'opacity 0.2s ease',
                   }}
@@ -920,9 +795,15 @@ export default function ShopPage() {
   const [openProduct,  setOpenProduct]  = useState(null)
   const [showMixBox,   setShowMixBox]   = useState(false)
 
-  // Fulfillment step
-  const [shopStep, setShopStep] = useState(() => getFulfillment() ? 'products' : 'fulfillment')
-  const [fulfillmentData, setFulfillmentData] = useState(() => getFulfillment())
+  // Fulfillment step — only skip to products if a valid delivery session exists
+  const [shopStep, setShopStep] = useState(() => {
+    const saved = getFulfillment()
+    return (saved?.type === 'delivery' && saved?.emirate) ? 'products' : 'fulfillment'
+  })
+  const [fulfillmentData, setFulfillmentData] = useState(() => {
+    const saved = getFulfillment()
+    return (saved?.type === 'delivery' && saved?.emirate) ? saved : null
+  })
 
   useEffect(() => {
     getProducts()

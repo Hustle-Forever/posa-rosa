@@ -9,21 +9,14 @@ export default function CartDrawer() {
   const { items, cartTotal, cartCount, removeFromCart, updateQuantity, closeDrawer, drawerOpen } = useCart()
   const navigate = useNavigate()
   const [deliveryFee, setDeliveryFee] = useState(35)
-  const [isPickup, setIsPickup] = useState(false)
 
   // Lock body scroll while open (see scrollLock.js for why this is counted)
   useEffect(() => {
     if (drawerOpen) {
       lockBodyScroll()
-      // Refresh fee from sessionStorage each time drawer opens
+      // Refresh delivery fee from sessionStorage each time drawer opens
       const saved = getFulfillment()
-      if (saved?.type === 'pickup') {
-        setIsPickup(true)
-        setDeliveryFee(0)
-      } else {
-        setIsPickup(false)
-        setDeliveryFee(getDeliveryFee(saved?.emirate))
-      }
+      setDeliveryFee(getDeliveryFee(saved?.emirate))
       return unlockBodyScroll
     }
   }, [drawerOpen])
@@ -292,10 +285,10 @@ export default function CartDrawer() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
                   <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.5)' }}>
-                    {isPickup ? 'Pickup' : 'Delivery'}
+                    Delivery
                   </span>
                   <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', color: '#3D1A1A', fontWeight: 500 }}>
-                    {isPickup ? 'Free' : `AED ${deliveryFee}`}
+                    AED {deliveryFee}
                   </span>
                 </div>
 
