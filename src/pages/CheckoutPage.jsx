@@ -2,12 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useCart } from '../context/CartContext'
-
-const AREAS = [
-  'Al Khalidiyah', 'Al Mushrif', 'Al Nahyan', 'Khalifa City',
-  'Al Reem Island', 'Yas Island', 'Saadiyat Island', 'Al Karamah',
-  'Mohamed Bin Zayed', 'Other',
-]
+import { EMIRATE_AREAS, EMIRATES, getDeliveryFee, getFulfillment } from '../lib/fulfillment'
 
 const TIME_SLOTS = [
   { label: 'Morning',   hours: '9AM – 12PM' },
@@ -15,9 +10,6 @@ const TIME_SLOTS = [
   { label: 'Evening',   hours: '5PM – 8PM'  },
 ]
 
-const DELIVERY_FEE = 35
-
-// Para Café pickup branches — maps links match the About page exactly
 const BRANCHES = [
   {
     name: 'Abu Dhabi University',
@@ -48,6 +40,19 @@ function inputStyle(hasError) {
     boxSizing: 'border-box',
     outline: 'none',
     transition: 'border-color 0.22s ease, box-shadow 0.22s ease',
+  }
+}
+
+const selectArrowBg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%233D1A1A' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`
+
+function selectStyle(hasError) {
+  return {
+    ...inputStyle(hasError),
+    appearance: 'none',
+    backgroundImage: selectArrowBg,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 14px center',
+    paddingRight: '2.5rem',
   }
 }
 
@@ -93,10 +98,7 @@ function Field({ label, error, children }) {
       </label>
       {children}
       {error && (
-        <p style={{
-          margin: '0.3rem 0 0', fontFamily: 'var(--font-sans)',
-          fontSize: '0.68rem', color: '#c0392b',
-        }}>
+        <p style={{ margin: '0.3rem 0 0', fontFamily: 'var(--font-sans)', fontSize: '0.68rem', color: '#c0392b' }}>
           {error}
         </p>
       )}
@@ -118,6 +120,27 @@ function Spinner() {
   )
 }
 
+function initFormFromSession() {
+  const saved = getFulfillment()
+  const emirate = saved?.emirate || 'Abu Dhabi'
+  const areaList = EMIRATE_AREAS[emirate] || EMIRATE_AREAS['Abu Dhabi']
+  const rawArea = saved?.area || ''
+  const isCustomArea = rawArea && !areaList.includes(rawArea)
+  return {
+    name: '', phone: '', email: '',
+    address: '',
+    emirate,
+    area:      isCustomArea ? 'Other' : rawArea,
+    areaOther: isCustomArea ? rawArea : '',
+    date: '', timeSlot: '', notes: '', mapsLink: '',
+  }
+}
+
+function initFulfillmentFromSession() {
+  const saved = getFulfillment()
+  return saved?.type === 'pickup' ? 'pickup' : 'delivery'
+}
+
 export default function CheckoutPage() {
   const { items, cartTotal, clearCart } = useCart()
   const navigate = useNavigate()
@@ -125,19 +148,31 @@ export default function CheckoutPage() {
   const [loading,     setLoading]     = useState(false)
   const [serverError, setServerError] = useState(null)
   const [errors,      setErrors]      = useState({})
-  const [fulfillment, setFulfillment] = useState('delivery')
+  const [fulfillment, setFulfillment] = useState(initFulfillmentFromSession)
   const [branch,      setBranch]      = useState('')
-  const [form, setForm] = useState({
-    name: '', phone: '', email: '',
-    address: '', area: '', date: '', timeSlot: '', notes: '', mapsLink: '',
-  })
+  const [form,        setFormState]   = useState(initFormFromSession)
 
   const isPickup    = fulfillment === 'pickup'
-  const deliveryFee = isPickup ? 0 : DELIVERY_FEE
+  const deliveryFee = isPickup ? 0 : getDeliveryFee(form.emirate)
+  const orderTotal  = cartTotal + deliveryFee
+
+  const areaOptions = EMIRATE_AREAS[form.emirate] || EMIRATE_AREAS['Abu Dhabi']
 
   function set(key, val) {
-    setForm(f => ({ ...f, [key]: val }))
+    setFormState(f => ({ ...f, [key]: val }))
     if (errors[key]) setErrors(e => ({ ...e, [key]: '' }))
+  }
+
+  function handleEmirateChange(newEmirate) {
+    const newAreas = EMIRATE_AREAS[newEmirate] || []
+    setFormState(f => ({
+      ...f,
+      emirate: newEmirate,
+      area:      newAreas.includes(f.area) ? f.area : '',
+      areaOther: '',
+    }))
+    if (errors.emirate) setErrors(e => ({ ...e, emirate: '' }))
+    if (errors.area)    setErrors(e => ({ ...e, area: '' }))
   }
 
   function switchFulfillment(mode) {
@@ -150,19 +185,23 @@ export default function CheckoutPage() {
     if (errors.branch) setErrors(e => ({ ...e, branch: '' }))
   }
 
+  const resolvedArea = form.area === 'Other' ? form.areaOther : form.area
+
   function validate() {
     const e = {}
-    if (!form.name.trim())    e.name     = 'Your name is required'
-    if (!form.phone.trim())   e.phone    = 'Phone number is required'
-    if (!form.email.trim())   e.email    = 'Email address is required'
+    if (!form.name.trim())  e.name  = 'Your name is required'
+    if (!form.phone.trim()) e.phone = 'Phone number is required'
+    if (!form.email.trim()) e.email = 'Email address is required'
     if (isPickup) {
-      if (!branch)            e.branch   = 'Please select a branch'
+      if (!branch) e.branch = 'Please select a branch'
     } else {
-      if (!form.address.trim()) e.address = 'Street address is required'
-      if (!form.area)           e.area    = 'Please select your area'
+      if (!form.emirate)           e.emirate = 'Please select an emirate'
+      if (!form.address.trim())    e.address = 'Street address is required'
+      if (!form.area)              e.area    = 'Please select your area'
+      if (form.area === 'Other' && !form.areaOther.trim()) e.areaOther = 'Please describe your area'
     }
-    if (!form.date)           e.date     = isPickup ? 'Please choose a pickup date' : 'Please choose a delivery date'
-    if (!form.timeSlot)       e.timeSlot = 'Please select a time slot'
+    if (!form.date)     e.date     = isPickup ? 'Please choose a pickup date' : 'Please choose a delivery date'
+    if (!form.timeSlot) e.timeSlot = 'Please select a time slot'
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -179,16 +218,23 @@ export default function CheckoutPage() {
           customer: { name: form.name, phone: form.phone, email: form.email },
           delivery: {
             fulfillmentType: fulfillment,
+            emirate:  isPickup ? '' : form.emirate,
             branch:   isPickup ? branch : '',
             address:  isPickup ? '' : form.address,
-            area:     isPickup ? '' : form.area,
+            area:     isPickup ? '' : resolvedArea,
             mapsLink: isPickup ? '' : form.mapsLink,
             date: form.date, timeSlot: form.timeSlot, notes: form.notes,
           },
           items: items.map(i => ({
-            variantId: i.variantId, quantity: i.quantity, name: i.name, price: i.price,
+            variantId:      i.variantId || null,
+            quantity:       i.quantity,
+            name:           i.name,
+            price:          i.price,
+            customItem:     i.customItem     || undefined,
+            mixBoxFlavors:  i.mixBoxFlavors  || undefined,
           })),
-          total: cartTotal + deliveryFee,
+          total:       orderTotal,
+          deliveryFee: isPickup ? 0 : deliveryFee,
         }),
       })
       const data = await res.json()
@@ -197,7 +243,7 @@ export default function CheckoutPage() {
       navigate(`/order-confirmation?id=${data.orderNumber}`, {
         state: {
           orderNumber: data.orderNumber, items: [...items],
-          delivery: { ...form, fulfillmentType: fulfillment, branch },
+          delivery: { ...form, fulfillmentType: fulfillment, branch, area: resolvedArea },
         },
       })
     } catch (err) {
@@ -206,8 +252,6 @@ export default function CheckoutPage() {
       setLoading(false)
     }
   }
-
-  const orderTotal = cartTotal + deliveryFee
 
   return (
     <motion.div
@@ -225,7 +269,6 @@ export default function CheckoutPage() {
         .co-place-btn { transition: background 0.28s ease, color 0.28s ease; }
         .co-place-btn:hover:not(:disabled) { background: var(--color-gold) !important; color: var(--color-dark) !important; }
         @media (max-width: 940px) {
-          /* stretch, not flex-start: in column mode the form column must fill the width */
           .co-layout { flex-direction: column !important; align-items: stretch !important; }
           .co-sidebar { display: none !important; }
         }
@@ -233,24 +276,16 @@ export default function CheckoutPage() {
           .co-time-slots { flex-direction: column !important; }
           .co-time-btn { width: 100% !important; }
         }
-        /* Mobile sticky order summary */
-        .co-mobile-summary {
-          display: none;
-        }
+        .co-mobile-summary { display: none; }
         @media (max-width: 940px) {
           .co-mobile-summary {
             display: flex !important;
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            background: #fff;
-            border-top: 1px solid rgba(61,26,26,0.1);
-            box-shadow: 0 -8px 32px rgba(61,26,26,0.1);
-            z-index: 80;
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: #fff; border-top: 1px solid rgba(61,26,26,0.1);
+            box-shadow: 0 -8px 32px rgba(61,26,26,0.1); z-index: 80;
             flex-direction: column;
-            padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom));
-            gap: 0.75rem;
+            padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom)); gap: 0.75rem;
           }
-          /* add padding so content doesn't hide behind sticky bar */
           .co-page-wrap { padding-bottom: 140px !important; }
         }
       `}</style>
@@ -273,20 +308,12 @@ export default function CheckoutPage() {
             border: '1px solid rgba(61,26,26,0.14)', padding: '4px',
             boxShadow: '0 2px 16px rgba(61,26,26,0.05)',
           }}>
-            {[
-              { key: 'delivery', label: 'Delivery' },
-              { key: 'pickup',   label: 'Pickup'   },
-            ].map(mode => {
+            {[{ key: 'delivery', label: 'Delivery' }, { key: 'pickup', label: 'Pickup' }].map(mode => {
               const active = fulfillment === mode.key
               return (
-                <button
-                  key={mode.key}
-                  type="button"
-                  onClick={() => switchFulfillment(mode.key)}
-                  aria-pressed={active}
+                <button key={mode.key} type="button" onClick={() => switchFulfillment(mode.key)} aria-pressed={active}
                   style={{
-                    flex: 1, padding: '0.72rem 0',
-                    border: 'none', borderRadius: '100px', cursor: 'pointer',
+                    flex: 1, padding: '0.72rem 0', border: 'none', borderRadius: '100px', cursor: 'pointer',
                     background: active ? 'var(--color-dark)' : 'transparent',
                     color: active ? 'var(--color-gold)' : 'rgba(61,26,26,0.55)',
                     fontFamily: 'var(--font-sans)', fontSize: '0.72rem',
@@ -310,18 +337,15 @@ export default function CheckoutPage() {
             <FormSection number="01" title="Your Details">
               <Field label="Full Name" error={errors.name}>
                 <input className="co-input" type="text" placeholder="Fatima Al Mansoori"
-                  value={form.name} onChange={e => set('name', e.target.value)}
-                  style={inputStyle(errors.name)} />
+                  value={form.name} onChange={e => set('name', e.target.value)} style={inputStyle(errors.name)} />
               </Field>
               <Field label="Phone Number" error={errors.phone}>
                 <input className="co-input" type="tel" placeholder="+971 50 000 0000"
-                  value={form.phone} onChange={e => set('phone', e.target.value)}
-                  style={inputStyle(errors.phone)} />
+                  value={form.phone} onChange={e => set('phone', e.target.value)} style={inputStyle(errors.phone)} />
               </Field>
               <Field label="Email Address" error={errors.email}>
                 <input className="co-input" type="email" placeholder="you@example.com"
-                  value={form.email} onChange={e => set('email', e.target.value)}
-                  style={inputStyle(errors.email)} />
+                  value={form.email} onChange={e => set('email', e.target.value)} style={inputStyle(errors.email)} />
               </Field>
             </FormSection>
 
@@ -334,11 +358,7 @@ export default function CheckoutPage() {
                       {BRANCHES.map(b => {
                         const active = branch === b.name
                         return (
-                          <button
-                            key={b.name}
-                            className="co-time-btn"
-                            type="button"
-                            onClick={() => selectBranch(b.name)}
+                          <button key={b.name} className="co-time-btn" type="button" onClick={() => selectBranch(b.name)}
                             style={{
                               flex: 1, padding: '0.75rem 0.875rem',
                               border: `1px solid ${active ? 'var(--color-dark)' : 'rgba(61,26,26,0.18)'}`,
@@ -355,12 +375,10 @@ export default function CheckoutPage() {
                       })}
                     </div>
                   </Field>
-
                   {branch && (
                     <a
                       href={BRANCHES.find(b => b.name === branch).mapsLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      target="_blank" rel="noopener noreferrer"
                       style={{
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                         gap: '0.5rem', padding: '0.75rem 1.5rem', alignSelf: 'flex-start',
@@ -381,35 +399,41 @@ export default function CheckoutPage() {
                 </>
               ) : (
                 <>
+                  {/* Emirate */}
+                  <Field label="Emirate" error={errors.emirate}>
+                    <select className="co-input" value={form.emirate} onChange={e => handleEmirateChange(e.target.value)}
+                      style={selectStyle(errors.emirate)}>
+                      <option value="">Select emirate</option>
+                      {EMIRATES.map(em => <option key={em} value={em}>{em}</option>)}
+                    </select>
+                  </Field>
+
                   <Field label="Street Address" error={errors.address}>
                     <input className="co-input" type="text" placeholder="Villa 12, Street 5"
-                      value={form.address} onChange={e => set('address', e.target.value)}
-                      style={inputStyle(errors.address)} />
+                      value={form.address} onChange={e => set('address', e.target.value)} style={inputStyle(errors.address)} />
                   </Field>
 
                   <Field label="Area" error={errors.area}>
-                    <select
-                      className="co-input"
-                      value={form.area}
-                      onChange={e => set('area', e.target.value)}
-                      style={{
-                        ...inputStyle(errors.area), appearance: 'none',
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%233D1A1A' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                        backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: '2.5rem',
-                      }}
-                    >
+                    <select className="co-input" value={form.area} onChange={e => set('area', e.target.value)}
+                      style={selectStyle(errors.area)}>
                       <option value="">Select area</option>
-                      {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                      {areaOptions.map(a => <option key={a} value={a}>{a}</option>)}
                     </select>
                   </Field>
+
+                  {form.area === 'Other' && (
+                    <Field label="Your Area / Neighbourhood" error={errors.areaOther}>
+                      <input className="co-input" type="text" placeholder="e.g. Palm Jumeirah"
+                        value={form.areaOther} onChange={e => set('areaOther', e.target.value)}
+                        style={inputStyle(errors.areaOther)} />
+                    </Field>
+                  )}
                 </>
               )}
 
               <Field label={isPickup ? 'Pickup Date' : 'Delivery Date'} error={errors.date}>
-                <input className="co-input" type="date"
-                  min={tomorrowMin()}
-                  value={form.date} onChange={e => set('date', e.target.value)}
-                  style={inputStyle(errors.date)} />
+                <input className="co-input" type="date" min={tomorrowMin()}
+                  value={form.date} onChange={e => set('date', e.target.value)} style={inputStyle(errors.date)} />
               </Field>
 
               <Field label="Preferred Time" error={errors.timeSlot}>
@@ -418,11 +442,7 @@ export default function CheckoutPage() {
                     const val    = `${slot.label} ${slot.hours}`
                     const active = form.timeSlot === val
                     return (
-                      <button
-                        key={slot.label}
-                        className="co-time-btn"
-                        type="button"
-                        onClick={() => set('timeSlot', val)}
+                      <button key={slot.label} className="co-time-btn" type="button" onClick={() => set('timeSlot', val)}
                         style={{
                           flex: 1, padding: '0.75rem 0.875rem',
                           border: `1px solid ${active ? 'var(--color-dark)' : 'rgba(61,26,26,0.18)'}`,
@@ -441,26 +461,16 @@ export default function CheckoutPage() {
               </Field>
 
               <Field label={isPickup ? 'Notes (optional)' : 'Delivery Notes (optional)'}>
-                <textarea
-                  className="co-input"
-                  placeholder={isPickup ? 'Anything we should know about your order...' : 'Building entrance, special delivery instructions...'}
-                  value={form.notes}
-                  onChange={e => set('notes', e.target.value)}
-                  rows={3}
-                  style={{ ...inputStyle(), resize: 'vertical' }}
-                />
+                <textarea className="co-input"
+                  placeholder={isPickup ? 'Anything we should know...' : 'Building entrance, special instructions...'}
+                  value={form.notes} onChange={e => set('notes', e.target.value)}
+                  rows={3} style={{ ...inputStyle(), resize: 'vertical' }} />
               </Field>
 
               {!isPickup && (
                 <Field label="Paste your Google Maps location link (optional)">
-                  <input
-                    className="co-input"
-                    type="url"
-                    placeholder="https://maps.app.goo.gl/..."
-                    value={form.mapsLink}
-                    onChange={e => set('mapsLink', e.target.value)}
-                    style={inputStyle()}
-                  />
+                  <input className="co-input" type="url" placeholder="https://maps.app.goo.gl/..."
+                    value={form.mapsLink} onChange={e => set('mapsLink', e.target.value)} style={inputStyle()} />
                 </Field>
               )}
             </FormSection>
@@ -491,7 +501,6 @@ export default function CheckoutPage() {
                   </p>
                 </div>
               </div>
-
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '1rem',
                 padding: '1.1rem 1.25rem', border: '1px solid rgba(61,26,26,0.1)',
@@ -507,22 +516,11 @@ export default function CheckoutPage() {
           </div>
 
           {/* ── Sidebar: Order Summary (desktop) ── */}
-          <div
-            className="co-sidebar"
-            style={{
-              width: '360px', flexShrink: 0,
-              position: 'sticky', top: 'calc(var(--bar-h) + var(--nav-h) + 2rem)',
-            }}
-          >
+          <div className="co-sidebar" style={{ width: '360px', flexShrink: 0, position: 'sticky', top: 'calc(var(--bar-h) + var(--nav-h) + 2rem)' }}>
             <OrderSummaryCard
-              items={items}
-              cartTotal={cartTotal}
-              orderTotal={orderTotal}
-              isPickup={isPickup}
-              deliveryFee={deliveryFee}
-              loading={loading}
-              serverError={serverError}
-              errors={errors}
+              items={items} cartTotal={cartTotal} orderTotal={orderTotal}
+              isPickup={isPickup} deliveryFee={deliveryFee}
+              loading={loading} serverError={serverError} errors={errors}
               onPlace={handlePlaceOrder}
             />
           </div>
@@ -531,25 +529,19 @@ export default function CheckoutPage() {
 
       {/* ── Mobile sticky order summary ── */}
       <div className="co-mobile-summary">
-        {/* Mini totals row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.5)' }}>
-              {items.length} item{items.length !== 1 ? 's' : ''} · {isPickup ? 'Pickup — Free' : `Delivery AED ${DELIVERY_FEE}`}
+              {items.length} item{items.length !== 1 ? 's' : ''} · {isPickup ? 'Pickup — Free' : `Delivery AED ${deliveryFee}`}
             </p>
             <p style={{ margin: 0, fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.4rem', fontWeight: 500, color: 'var(--color-dark)' }}>
               AED {orderTotal}
             </p>
           </div>
-          <motion.button
-            className="co-place-btn"
-            onClick={handlePlaceOrder}
-            whileTap={{ scale: 0.97 }}
-            disabled={loading}
+          <motion.button className="co-place-btn" onClick={handlePlaceOrder} whileTap={{ scale: 0.97 }} disabled={loading}
             style={{
               padding: '0.875rem 1.75rem',
-              background: 'var(--color-dark)',
-              color: 'var(--color-gold)',
+              background: 'var(--color-dark)', color: 'var(--color-gold)',
               border: 'none', borderRadius: '8px',
               fontFamily: 'var(--font-sans)', fontSize: '0.7rem',
               letterSpacing: '0.14em', textTransform: 'uppercase',
@@ -577,26 +569,17 @@ export default function CheckoutPage() {
   )
 }
 
-// Extracted summary card so it can be used in sidebar
 function OrderSummaryCard({ items, cartTotal, orderTotal, isPickup, deliveryFee, loading, serverError, errors, onPlace }) {
   return (
-    <div style={{
-      background: '#fff', borderRadius: '14px',
-      padding: '2rem', boxShadow: '0 4px 32px rgba(61,26,26,0.07)',
-    }}>
-      <h3 style={{
-        fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.5rem',
-        fontWeight: 400, color: 'var(--color-dark)', margin: '0 0 1.5rem',
-      }}>
+    <div style={{ background: '#fff', borderRadius: '14px', padding: '2rem', boxShadow: '0 4px 32px rgba(61,26,26,0.07)' }}>
+      <h3 style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.5rem', fontWeight: 400, color: 'var(--color-dark)', margin: '0 0 1.5rem' }}>
         Order Summary
       </h3>
 
-      {/* Items */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', marginBottom: '1.5rem' }}>
         {items.length === 0 ? (
           <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.5)' }}>
-            No items.{' '}
-            <Link to="/shop" style={{ color: 'var(--color-gold)', textDecoration: 'none' }}>Shop now</Link>
+            No items.{' '}<Link to="/shop" style={{ color: 'var(--color-gold)', textDecoration: 'none' }}>Shop now</Link>
           </p>
         ) : items.map(item => (
           <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
@@ -604,15 +587,22 @@ function OrderSummaryCard({ items, cartTotal, orderTotal, isPickup, deliveryFee,
               <img src={item.image} alt={item.name}
                 style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
             ) : (
-              <div style={{ width: '50px', height: '50px', borderRadius: '6px', flexShrink: 0, background: 'rgba(61,26,26,0.05)' }} />
+              <div style={{ width: '50px', height: '50px', borderRadius: '6px', flexShrink: 0, background: 'rgba(61,26,26,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="rgba(61,26,26,0.3)" strokeWidth="1" width="20" height="20">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                </svg>
+              </div>
             )}
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.78rem', fontWeight: 500, color: 'var(--color-dark)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {item.name}
               </p>
-              <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.7rem', color: 'rgba(61,26,26,0.44)' }}>
-                ×{item.quantity}
-              </p>
+              {item.mixBoxFlavors && (
+                <p style={{ margin: '0.1rem 0 0', fontFamily: 'var(--font-sans)', fontSize: '0.62rem', color: 'rgba(61,26,26,0.5)', lineHeight: 1.4 }}>
+                  {item.mixBoxFlavors.map(f => `${f.name} ×${f.qty}`).join(', ')}
+                </p>
+              )}
+              <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.7rem', color: 'rgba(61,26,26,0.44)' }}>×{item.quantity}</p>
             </div>
             <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-dark)', flexShrink: 0 }}>
               AED {item.price * item.quantity}
@@ -623,7 +613,6 @@ function OrderSummaryCard({ items, cartTotal, orderTotal, isPickup, deliveryFee,
 
       <div style={{ height: '1px', background: 'rgba(61,26,26,0.09)', marginBottom: '1.25rem' }} />
 
-      {/* Totals */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginBottom: '1.75rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.55)' }}>Subtotal</span>
@@ -642,12 +631,7 @@ function OrderSummaryCard({ items, cartTotal, orderTotal, isPickup, deliveryFee,
         </div>
       </div>
 
-      {/* Place Order */}
-      <motion.button
-        className="co-place-btn"
-        onClick={onPlace}
-        whileTap={{ scale: 0.98 }}
-        disabled={loading}
+      <motion.button className="co-place-btn" onClick={onPlace} whileTap={{ scale: 0.98 }} disabled={loading}
         style={{
           width: '100%', padding: '1rem',
           background: 'var(--color-dark)', color: 'var(--color-gold)',
@@ -661,36 +645,23 @@ function OrderSummaryCard({ items, cartTotal, orderTotal, isPickup, deliveryFee,
       >
         {loading && (
           <span style={{
-            display: 'inline-block', width: '16px', height: '16px',
-            borderRadius: '50%', border: '2px solid rgba(201,169,110,0.3)',
-            borderTopColor: 'var(--color-gold)',
-            animation: 'co-spin 0.75s linear infinite',
-            marginRight: '0.5rem',
+            display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%',
+            border: '2px solid rgba(201,169,110,0.3)', borderTopColor: 'var(--color-gold)',
+            animation: 'co-spin 0.75s linear infinite', marginRight: '0.5rem',
           }} />
         )}
         {loading ? 'Processing your order…' : 'Place Order'}
       </motion.button>
 
       {Object.keys(errors).length > 0 && (
-        <motion.p
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          style={{
-            marginTop: '0.75rem', fontFamily: 'var(--font-sans)',
-            fontSize: '0.7rem', color: '#c0392b', textAlign: 'center', lineHeight: 1.5,
-          }}
-        >
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          style={{ marginTop: '0.75rem', fontFamily: 'var(--font-sans)', fontSize: '0.7rem', color: '#c0392b', textAlign: 'center', lineHeight: 1.5 }}>
           Please fill all required fields.
         </motion.p>
       )}
-
       {serverError && (
-        <motion.p
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          style={{
-            marginTop: '0.75rem', fontFamily: 'var(--font-sans)',
-            fontSize: '0.7rem', color: '#c0392b', textAlign: 'center', lineHeight: 1.5,
-          }}
-        >
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          style={{ marginTop: '0.75rem', fontFamily: 'var(--font-sans)', fontSize: '0.7rem', color: '#c0392b', textAlign: 'center', lineHeight: 1.5 }}>
           {serverError}
         </motion.p>
       )}

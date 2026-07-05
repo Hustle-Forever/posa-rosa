@@ -1,19 +1,29 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '../context/CartContext'
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock'
-
-const DELIVERY_FEE = 35
+import { getFulfillment, getDeliveryFee } from '../lib/fulfillment'
 
 export default function CartDrawer() {
   const { items, cartTotal, cartCount, removeFromCart, updateQuantity, closeDrawer, drawerOpen } = useCart()
   const navigate = useNavigate()
+  const [deliveryFee, setDeliveryFee] = useState(35)
+  const [isPickup, setIsPickup] = useState(false)
 
   // Lock body scroll while open (see scrollLock.js for why this is counted)
   useEffect(() => {
     if (drawerOpen) {
       lockBodyScroll()
+      // Refresh fee from sessionStorage each time drawer opens
+      const saved = getFulfillment()
+      if (saved?.type === 'pickup') {
+        setIsPickup(true)
+        setDeliveryFee(0)
+      } else {
+        setIsPickup(false)
+        setDeliveryFee(getDeliveryFee(saved?.emirate))
+      }
       return unlockBodyScroll
     }
   }, [drawerOpen])
@@ -282,10 +292,10 @@ export default function CartDrawer() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
                   <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.5)' }}>
-                    Delivery
+                    {isPickup ? 'Pickup' : 'Delivery'}
                   </span>
                   <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', color: '#3D1A1A', fontWeight: 500 }}>
-                    AED {DELIVERY_FEE}
+                    {isPickup ? 'Free' : `AED ${deliveryFee}`}
                   </span>
                 </div>
 
@@ -303,7 +313,7 @@ export default function CartDrawer() {
                     fontFamily: 'Cormorant Garamond, Georgia, serif',
                     fontSize: '1.5rem', fontWeight: 400, color: '#3D1A1A',
                   }}>
-                    AED {(cartTotal + DELIVERY_FEE).toFixed(0)}
+                    AED {(cartTotal + deliveryFee).toFixed(0)}
                   </span>
                 </div>
 

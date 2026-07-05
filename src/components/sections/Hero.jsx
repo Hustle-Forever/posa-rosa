@@ -185,8 +185,8 @@ export default function Hero() {
             letterSpacing: '-0.025em',
           }}
         >
-          Butterfly Chocolates<br />
-          <em style={{ fontStyle: 'italic', color: 'var(--color-pink)' }}>A Bite of Bliss</em>
+          Happiness is<br />
+          <em style={{ fontStyle: 'italic', color: 'var(--color-pink)' }}>a Butterfly</em>
         </h1>
 
         <p
@@ -218,12 +218,6 @@ export default function Hero() {
           >
             Shop Now
           </Link>
-          <a
-            href="#chocolates"
-            style={pillBtn('outline')}
-          >
-            Explore Collection
-          </a>
         </div>
       </div>
 
