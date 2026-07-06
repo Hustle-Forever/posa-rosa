@@ -11,11 +11,26 @@ export default function Footer() {
   return (
     <footer
       style={{
-        backgroundColor: '#3D1A1A',
+        position: 'relative',
+        overflow: 'hidden',
         padding: 'clamp(4rem, 8vw, 7rem) clamp(1.2rem, 5vw, 5rem) clamp(2.5rem, 5vw, 4rem)',
       }}
     >
-      <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
+      {/* Warpaper botanical texture */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: 'url("/assets/brand-reference/Warpaper.png")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center bottom',
+        zIndex: 0,
+      }} />
+      {/* Deep rose overlay for text contrast */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'rgba(148, 88, 95, 0.78)',
+        zIndex: 1,
+      }} />
+      <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 2 }}>
         {/* Logo */}
         <div style={{ marginBottom: 'clamp(2rem, 4vw, 3.5rem)' }}>
           <img

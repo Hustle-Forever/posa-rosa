@@ -1,8 +1,8 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useCart } from '../context/CartContext'
-import { EMIRATE_AREAS, EMIRATES, getDeliveryFee, getFulfillment } from '../lib/fulfillment'
+import { EMIRATE_AREAS, EMIRATES, getDeliveryFee, getFulfillment, getDeliveryTiming } from '../lib/fulfillment'
 
 const TIME_SLOTS = [
   { label: 'Morning',   hours: '9AM – 12PM' },
@@ -10,9 +10,9 @@ const TIME_SLOTS = [
   { label: 'Evening',   hours: '5PM – 8PM'  },
 ]
 
-function tomorrowMin() {
+function deliveryDateMin(emirate) {
   const d = new Date()
-  d.setDate(d.getDate() + 1)
+  if (emirate !== 'Abu Dhabi') d.setDate(d.getDate() + 1)
   return d.toISOString().split('T')[0]
 }
 
@@ -59,11 +59,11 @@ function FormSection({ number, title, children }) {
         borderBottom: '1px solid rgba(61,26,26,0.09)',
       }}>
         <span style={{
-          fontFamily: 'Cormorant Garamond, Georgia, serif',
+          fontFamily: 'var(--font-serif)',
           fontSize: '0.9rem', color: 'var(--color-gold)', fontWeight: 500, letterSpacing: '0.04em',
         }}>{number}</span>
         <h2 style={{
-          fontFamily: 'Cormorant Garamond, Georgia, serif',
+          fontFamily: 'var(--font-serif)',
           fontSize: '1.4rem', fontWeight: 400, color: 'var(--color-dark)', margin: 0,
         }}>{title}</h2>
       </div>
@@ -146,11 +146,13 @@ export default function CheckoutPage() {
 
   function handleEmirateChange(newEmirate) {
     const newAreas = EMIRATE_AREAS[newEmirate] || []
+    const minDate  = deliveryDateMin(newEmirate)
     setFormState(f => ({
       ...f,
       emirate: newEmirate,
       area:      newAreas.includes(f.area) ? f.area : '',
       areaOther: '',
+      date:      f.date && f.date < minDate ? '' : f.date,
     }))
     if (errors.emirate) setErrors(e => ({ ...e, emirate: '' }))
     if (errors.area)    setErrors(e => ({ ...e, area: '' }))
@@ -233,7 +235,7 @@ export default function CheckoutPage() {
         .co-time-btn { transition: all 0.22s; }
         .co-time-btn:hover { border-color: var(--color-dark) !important; }
         .co-place-btn { transition: background 0.28s ease, color 0.28s ease; }
-        .co-place-btn:hover:not(:disabled) { background: var(--color-gold) !important; color: var(--color-dark) !important; }
+        .co-place-btn:hover:not(:disabled) { background: var(--color-gold) !important; color: #3D2020 !important; }
         @media (max-width: 940px) {
           .co-layout { flex-direction: column !important; align-items: stretch !important; }
           .co-sidebar { display: none !important; }
@@ -258,7 +260,7 @@ export default function CheckoutPage() {
 
       <div className="co-page-wrap" style={{ maxWidth: '1200px', margin: '0 auto', padding: '3rem 1.5rem 6rem' }}>
         <h1 style={{
-          fontFamily: 'Cormorant Garamond, Georgia, serif',
+          fontFamily: 'var(--font-serif)',
           fontSize: 'clamp(2rem, 5vw, 3.25rem)',
           fontWeight: 300, color: 'var(--color-dark)',
           letterSpacing: '0.04em', textAlign: 'center', marginBottom: '3rem',
@@ -296,6 +298,18 @@ export default function CheckoutPage() {
                   <option value="">Select emirate</option>
                   {EMIRATES.map(em => <option key={em} value={em}>{em}</option>)}
                 </select>
+                {form.emirate && (
+                  <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{
+                      fontFamily: 'var(--font-sans)', fontSize: '0.62rem', letterSpacing: '0.06em',
+                      padding: '0.18rem 0.6rem', borderRadius: '100px', fontWeight: 600,
+                      background: form.emirate === 'Abu Dhabi' ? 'rgba(201,169,110,0.15)' : 'rgba(201,160,163,0.2)',
+                      color: form.emirate === 'Abu Dhabi' ? 'var(--color-gold)' : 'var(--color-dark)',
+                    }}>
+                      {form.emirate === 'Abu Dhabi' ? 'Same-day delivery available' : 'Next-day delivery'}
+                    </span>
+                  </div>
+                )}
               </Field>
 
               <Field label="Street Address" error={errors.address}>
@@ -320,7 +334,7 @@ export default function CheckoutPage() {
               )}
 
               <Field label="Delivery Date" error={errors.date}>
-                <input className="co-input" type="date" min={tomorrowMin()}
+                <input className="co-input" type="date" min={deliveryDateMin(form.emirate)}
                   value={form.date} onChange={e => set('date', e.target.value)} style={inputStyle(errors.date)} />
               </Field>
 
@@ -420,14 +434,14 @@ export default function CheckoutPage() {
             <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.5)' }}>
               {items.length} item{items.length !== 1 ? 's' : ''} · Delivery AED {deliveryFee}
             </p>
-            <p style={{ margin: 0, fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.4rem', fontWeight: 500, color: 'var(--color-dark)' }}>
+            <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: '1.4rem', fontWeight: 500, color: 'var(--color-dark)' }}>
               AED {orderTotal}
             </p>
           </div>
           <motion.button className="co-place-btn" onClick={handlePlaceOrder} whileTap={{ scale: 0.97 }} disabled={loading}
             style={{
               padding: '0.875rem 1.75rem',
-              background: 'var(--color-dark)', color: 'var(--color-gold)',
+              background: 'var(--color-dark)', color: '#fff',
               border: 'none', borderRadius: '8px',
               fontFamily: 'var(--font-sans)', fontSize: '0.7rem',
               letterSpacing: '0.14em', textTransform: 'uppercase',
@@ -458,7 +472,7 @@ export default function CheckoutPage() {
 function OrderSummaryCard({ items, cartTotal, orderTotal, deliveryFee, loading, serverError, errors, onPlace }) {
   return (
     <div style={{ background: '#fff', borderRadius: '14px', padding: '2rem', boxShadow: '0 4px 32px rgba(61,26,26,0.07)' }}>
-      <h3 style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.5rem', fontWeight: 400, color: 'var(--color-dark)', margin: '0 0 1.5rem' }}>
+      <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.5rem', fontWeight: 400, color: 'var(--color-dark)', margin: '0 0 1.5rem' }}>
         Order Summary
       </h3>
 
@@ -511,7 +525,7 @@ function OrderSummaryCard({ items, cartTotal, orderTotal, deliveryFee, loading, 
         <div style={{ height: '1px', background: 'rgba(61,26,26,0.09)' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
           <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', fontWeight: 600, color: 'var(--color-dark)' }}>Total</span>
-          <span style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.35rem', color: 'var(--color-dark)', fontWeight: 500 }}>
+          <span style={{ fontFamily: 'var(--font-serif)', fontSize: '1.35rem', color: 'var(--color-dark)', fontWeight: 500 }}>
             AED {orderTotal}
           </span>
         </div>
@@ -520,7 +534,7 @@ function OrderSummaryCard({ items, cartTotal, orderTotal, deliveryFee, loading, 
       <motion.button className="co-place-btn" onClick={onPlace} whileTap={{ scale: 0.98 }} disabled={loading}
         style={{
           width: '100%', padding: '1rem',
-          background: 'var(--color-dark)', color: 'var(--color-gold)',
+          background: 'var(--color-dark)', color: '#fff',
           border: 'none', borderRadius: '8px',
           fontFamily: 'var(--font-sans)', fontSize: '0.75rem',
           letterSpacing: '0.14em', textTransform: 'uppercase',
@@ -532,7 +546,7 @@ function OrderSummaryCard({ items, cartTotal, orderTotal, deliveryFee, loading, 
         {loading && (
           <span style={{
             display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%',
-            border: '2px solid rgba(201,169,110,0.3)', borderTopColor: 'var(--color-gold)',
+            border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff',
             animation: 'co-spin 0.75s linear infinite', marginRight: '0.5rem',
           }} />
         )}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import CircularGallery from '../CircularGallery/CircularGallery'
 
 const items = [
@@ -40,9 +40,9 @@ export default function Products() {
       <h2
         style={{
           textAlign: 'center',
-          fontFamily: 'Cormorant Garamond, Georgia, serif',
+          fontFamily: 'var(--font-serif)',
           fontSize: 'clamp(2.5rem, 6vw, 5rem)',
-          color: '#3D1A1A',
+          color: 'var(--color-dark)',
           marginBottom: '60px',
           fontWeight: 300,
           letterSpacing: '0.05em',
@@ -62,12 +62,12 @@ export default function Products() {
         <CircularGallery
           items={items}
           bend={isMobile ? 0.5 : 1}
-          textColor="#3D1A1A"
+          textColor="var(--color-dark)"
           borderRadius={0.05}
           scrollSpeed={isMobile ? 3 : 1}
           scrollEase={0.02}
-          fontUrl="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap"
-          font="300 24px Cormorant Garamond"
+          fontUrl="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,300;1,6..96,300&display=swap"
+          font="300 24px Bodoni Moda"
         />
       </div>
     </section>

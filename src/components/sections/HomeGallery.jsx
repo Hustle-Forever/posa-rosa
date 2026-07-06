@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { getProducts, normalizeProduct } from '../../lib/shopify'
@@ -69,7 +69,7 @@ function GalleryItem({ product, index }) {
         transition: 'opacity 0.35s ease',
       }}>
         <span style={{
-          fontFamily: 'Cormorant Garamond, Georgia, serif',
+          fontFamily: 'var(--font-serif)',
           fontSize: '1rem',
           fontWeight: 300,
           color: '#FDF6F0',
@@ -122,10 +122,10 @@ export default function HomeGallery() {
           viewport={{ once: true }}
           transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
           style={{
-            fontFamily: 'Cormorant Garamond, Georgia, serif',
+            fontFamily: 'var(--font-serif)',
             fontSize: 'clamp(2.4rem, 6vw, 4.8rem)',
             fontWeight: 300,
-            color: '#3D1A1A',
+            color: 'var(--color-dark)',
             letterSpacing: '0.06em',
             lineHeight: 1.08,
             margin: '0 0 0.75rem',
@@ -178,9 +178,9 @@ export default function HomeGallery() {
           whileTap={{ scale: 0.97 }}
           style={{
             padding: '1rem 3.5rem',
-            border: '1px solid #3D1A1A',
+            border: '1px solid var(--color-dark)',
             background: 'transparent',
-            color: '#3D1A1A',
+            color: 'var(--color-dark)',
             fontFamily: 'var(--font-sans)',
             fontSize: '0.7rem',
             letterSpacing: '0.22em',
@@ -189,8 +189,8 @@ export default function HomeGallery() {
             fontWeight: 500,
             transition: 'all 0.3s ease',
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#3D1A1A'; e.currentTarget.style.color = '#FDF6F0' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#3D1A1A' }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-dark)'; e.currentTarget.style.color = '#fff' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-dark)' }}
         >
           Shop All
         </motion.button>

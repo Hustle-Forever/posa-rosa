@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Scissors, Star, Heart } from 'lucide-react'
 
@@ -88,9 +88,9 @@ function ContactForm() {
         }}
       >
         <p style={{
-          fontFamily: 'Cormorant Garamond, Georgia, serif',
+          fontFamily: 'var(--font-serif)',
           fontSize: '1.8rem', fontWeight: 300,
-          color: '#3D1A1A', margin: '0 0 0.5rem',
+          color: 'var(--color-dark)', margin: '0 0 0.5rem',
         }}>
           Thank you
         </p>
@@ -140,7 +140,7 @@ function ContactForm() {
         disabled={busy}
         style={{
           padding: '1rem',
-          background: '#3D1A1A', color: '#FDF6F0',
+          background: 'var(--color-dark)', color: '#fff',
           border: 'none', borderRadius: '6px',
           fontFamily: 'var(--font-sans)', fontSize: '0.72rem',
           letterSpacing: '0.18em', textTransform: 'uppercase',
@@ -163,7 +163,7 @@ const labelStyle = {
 const inputStyle = {
   width: '100%', padding: '0.8rem 1rem', background: '#fff',
   border: '1px solid rgba(61,26,26,0.15)', borderRadius: '6px',
-  fontFamily: 'var(--font-sans)', fontSize: '0.86rem', color: '#3D1A1A',
+  fontFamily: 'var(--font-sans)', fontSize: '0.86rem', color: 'var(--color-dark)',
   boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.22s ease',
 }
 
@@ -186,7 +186,7 @@ export default function AboutPage() {
       style={{ background: 'var(--color-bg)', minHeight: '100vh', paddingTop: 'calc(var(--bar-h) + var(--nav-h))' }}
     >
       <style>{`
-        .about-input:focus { border-color: #3D1A1A !important; box-shadow: 0 0 0 3px rgba(61,26,26,0.06) !important; }
+        .about-input:focus { border-color: var(--color-dark) !important; box-shadow: 0 0 0 3px rgba(201,160,163,0.18) !important; }
         .about-input::placeholder { color: rgba(61,26,26,0.28); }
         .wa-btn-about:hover { background: #1da851 !important; }
 
@@ -220,11 +220,17 @@ export default function AboutPage() {
       {/* ─── HERO ─── */}
       <section style={{
         minHeight: '60vh',
-        background: 'linear-gradient(135deg, #3D1A1A 0%, #5C2E2E 100%)',
+        background: 'linear-gradient(135deg, #B8898D 0%, #C9A0A3 100%)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         textAlign: 'center', padding: '5rem 2rem',
         position: 'relative', overflow: 'hidden',
       }}>
+        {/* Warpaper botanical silhouette — subtle decorative accent */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: `url('/assets/brand-reference/Warpaper.png')`,
+          backgroundSize: 'cover', backgroundPosition: 'center bottom', opacity: 0.13,
+        }} />
         <div style={{
           position: 'absolute', inset: 0,
           backgroundImage: `url('/assets/images/Original, simple, perfect..jpg')`,
@@ -244,7 +250,7 @@ export default function AboutPage() {
           <motion.h1
             {...fade(0.18)}
             style={{
-              fontFamily: 'Cormorant Garamond, Georgia, serif',
+              fontFamily: 'var(--font-serif)',
               fontSize: 'clamp(3rem, 8vw, 5.5rem)',
               fontWeight: 300, color: '#FDF6F0',
               letterSpacing: '0.05em', lineHeight: 1.08, margin: '0 0 1.5rem',
@@ -281,9 +287,9 @@ export default function AboutPage() {
         <motion.h2
           {...fade(0.1)}
           style={{
-            fontFamily: 'Cormorant Garamond, Georgia, serif',
+            fontFamily: 'var(--font-serif)',
             fontSize: 'clamp(2rem, 5vw, 3.2rem)',
-            fontWeight: 300, color: '#3D1A1A',
+            fontWeight: 300, color: 'var(--color-dark)',
             letterSpacing: '0.04em', lineHeight: 1.2, margin: '0 0 2rem',
           }}
         >
@@ -306,7 +312,7 @@ export default function AboutPage() {
       </section>
 
       {/* ─── FIND US ─── */}
-      <section style={{ background: '#3D1A1A', padding: 'clamp(4rem, 8vw, 7rem) 2rem' }}>
+      <section style={{ background: 'var(--color-dark)', padding: 'clamp(4rem, 8vw, 7rem) 2rem' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <motion.p
             {...fade()}
@@ -321,7 +327,7 @@ export default function AboutPage() {
           <motion.h2
             {...fade(0.1)}
             style={{
-              fontFamily: 'Cormorant Garamond, Georgia, serif',
+              fontFamily: 'var(--font-serif)',
               fontSize: 'clamp(2rem, 5vw, 3.2rem)',
               fontWeight: 300, color: '#FDF6F0',
               letterSpacing: '0.05em', textAlign: 'center', margin: '0 0 0.75rem',
@@ -374,7 +380,7 @@ export default function AboutPage() {
 
                   {/* Branch name */}
                   <h3 style={{
-                    fontFamily: 'Cormorant Garamond, Georgia, serif',
+                    fontFamily: 'var(--font-serif)',
                     fontSize: '1.4rem', fontWeight: 400,
                     color: '#FDF6F0', margin: '0 0 0.6rem', lineHeight: 1.2,
                   }}>
@@ -443,9 +449,9 @@ export default function AboutPage() {
         <motion.h2
           {...fade(0.1)}
           style={{
-            fontFamily: 'Cormorant Garamond, Georgia, serif',
+            fontFamily: 'var(--font-serif)',
             fontSize: 'clamp(2rem, 5vw, 3.2rem)',
-            fontWeight: 300, color: '#3D1A1A',
+            fontWeight: 300, color: 'var(--color-dark)',
             letterSpacing: '0.04em', margin: '0 0 0.75rem',
           }}
         >
@@ -496,9 +502,9 @@ export default function AboutPage() {
           <motion.h2
             {...fade()}
             style={{
-              fontFamily: 'Cormorant Garamond, Georgia, serif',
+              fontFamily: 'var(--font-serif)',
               fontSize: 'clamp(2rem, 5vw, 3.2rem)',
-              fontWeight: 300, color: '#3D1A1A',
+              fontWeight: 300, color: 'var(--color-dark)',
               letterSpacing: '0.05em', textAlign: 'center', margin: '0 0 3rem',
             }}
           >
@@ -532,9 +538,9 @@ export default function AboutPage() {
                   <v.Icon size={22} strokeWidth={1.5} color="var(--color-gold)" />
                 </div>
                 <h3 style={{
-                  fontFamily: 'Cormorant Garamond, Georgia, serif',
+                  fontFamily: 'var(--font-serif)',
                   fontSize: '1.4rem', fontWeight: 400,
-                  color: '#3D1A1A', margin: '0 0 0.75rem', letterSpacing: '0.02em',
+                  color: 'var(--color-dark)', margin: '0 0 0.75rem', letterSpacing: '0.02em',
                 }}>
                   {v.title}
                 </h3>

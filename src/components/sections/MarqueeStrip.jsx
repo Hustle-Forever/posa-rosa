@@ -8,7 +8,7 @@ export default function MarqueeStrip() {
     <div
       aria-hidden="true"
       style={{
-        backgroundColor: '#3D1A1A',
+        backgroundColor: 'var(--color-dark)',
         overflow: 'hidden',
         padding: '0',
         borderTop: '1px solid rgba(201,169,110,0.18)',
@@ -23,7 +23,7 @@ export default function MarqueeStrip() {
           fontFamily: 'var(--font-sans)',
           fontSize: '0.7rem',
           letterSpacing: '0.2em',
-          color: 'var(--color-gold)',
+          color: 'rgba(253,246,240,0.82)',
           fontWeight: 500,
         }}
       />

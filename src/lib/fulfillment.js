@@ -18,6 +18,10 @@ export function getDeliveryFee(emirate) {
   return emirate === 'Abu Dhabi' ? 35 : 40
 }
 
+export function getDeliveryTiming(emirate) {
+  return emirate === 'Abu Dhabi' ? 'same-day' : 'next-day'
+}
+
 export function getFulfillment() {
   try {
     return JSON.parse(sessionStorage.getItem(KEY) || 'null')

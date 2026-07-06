@@ -1,4 +1,4 @@
-import { useLocation, useSearchParams, Link } from 'react-router-dom'
+﻿import { useLocation, useSearchParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CheckCircle } from 'lucide-react'
 
@@ -39,7 +39,7 @@ export default function OrderConfirmationPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           style={{
-            fontFamily: 'Cormorant Garamond, Georgia, serif',
+            fontFamily: 'var(--font-serif)',
             fontSize: 'clamp(2.25rem, 6vw, 3.5rem)',
             fontWeight: 300,
             color: 'var(--color-dark)',
@@ -86,7 +86,7 @@ export default function OrderConfirmationPage() {
             }}
           >
             <h3 style={{
-              fontFamily: 'Cormorant Garamond, Georgia, serif',
+              fontFamily: 'var(--font-serif)',
               fontSize: '1.3rem',
               fontWeight: 400,
               color: 'var(--color-dark)',
@@ -165,7 +165,7 @@ export default function OrderConfirmationPage() {
             }}
           >
             <h3 style={{
-              fontFamily: 'Cormorant Garamond, Georgia, serif',
+              fontFamily: 'var(--font-serif)',
               fontSize: '1.3rem',
               fontWeight: 400,
               color: 'var(--color-dark)',
@@ -238,7 +238,7 @@ export default function OrderConfirmationPage() {
               display: 'inline-block',
               padding: '0.9rem 2.75rem',
               background: 'var(--color-dark)',
-              color: 'var(--color-gold)',
+              color: '#fff',
               fontFamily: 'var(--font-sans)',
               fontSize: '0.72rem',
               letterSpacing: '0.14em',

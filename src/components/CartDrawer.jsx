@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '../context/CartContext'
@@ -73,13 +73,13 @@ export default function CartDrawer() {
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '1.25rem 1.5rem',
-              borderBottom: '1px solid rgba(61,26,26,0.09)',
+              borderBottom: '1px solid rgba(201,160,163,0.15)',
               flexShrink: 0,
             }}>
               <div>
                 <h2 style={{
-                  fontFamily: 'Cormorant Garamond, Georgia, serif',
-                  fontSize: '1.5rem', fontWeight: 400, color: '#3D1A1A', margin: 0,
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: '1.5rem', fontWeight: 400, color: 'var(--color-dark)', margin: 0,
                   letterSpacing: '0.02em',
                 }}>
                   Your Cart
@@ -99,12 +99,12 @@ export default function CartDrawer() {
                 aria-label="Close cart"
                 style={{
                   width: '36px', height: '36px', borderRadius: '50%',
-                  background: 'rgba(61,26,26,0.07)', border: 'none',
+                  background: 'rgba(201,160,163,0.12)', border: 'none',
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#3D1A1A', flexShrink: 0, transition: 'background 0.18s ease',
+                  color: 'var(--color-dark)', flexShrink: 0, transition: 'background 0.18s ease',
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(61,26,26,0.13)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(61,26,26,0.07)'}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(201,160,163,0.2)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(201,160,163,0.12)'}
               >
                 <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.75" width="14" height="14">
                   <path d="M2 2l14 14M16 2L2 16" strokeLinecap="round" />
@@ -120,10 +120,10 @@ export default function CartDrawer() {
                   justifyContent: 'center', height: '100%', textAlign: 'center',
                   padding: '3rem 1rem',
                 }}>
-                  <div style={{ width: '40px', height: '1px', background: 'rgba(61,26,26,0.18)', margin: '0 auto 1.25rem' }} />
+                  <div style={{ width: '40px', height: '1px', background: 'rgba(201,160,163,0.28)', margin: '0 auto 1.25rem' }} />
                   <p style={{
-                    fontFamily: 'Cormorant Garamond, Georgia, serif',
-                    fontSize: '1.4rem', fontWeight: 300, color: '#3D1A1A',
+                    fontFamily: 'var(--font-serif)',
+                    fontSize: '1.4rem', fontWeight: 300, color: 'var(--color-dark)',
                     margin: '0 0 0.5rem',
                   }}>
                     Your cart is empty
@@ -138,7 +138,7 @@ export default function CartDrawer() {
                     onClick={() => { closeDrawer(); navigate('/shop') }}
                     style={{
                       padding: '0.75rem 1.75rem',
-                      background: '#3D1A1A', color: 'var(--color-gold)',
+                      background: 'var(--color-dark)', color: '#fff',
                       border: 'none', borderRadius: '8px', cursor: 'pointer',
                       fontFamily: 'var(--font-sans)', fontSize: '0.7rem',
                       letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600,
@@ -155,14 +155,14 @@ export default function CartDrawer() {
                       style={{
                         display: 'flex', alignItems: 'flex-start', gap: '0.875rem',
                         padding: '1.1rem 0',
-                        borderBottom: i < items.length - 1 ? '1px solid rgba(61,26,26,0.07)' : 'none',
+                        borderBottom: i < items.length - 1 ? '1px solid rgba(201,160,163,0.12)' : 'none',
                       }}
                     >
                       {/* Thumbnail */}
                       <div style={{
                         width: '68px', height: '68px', borderRadius: '8px',
                         overflow: 'hidden', flexShrink: 0,
-                        background: 'rgba(61,26,26,0.05)',
+                        background: 'rgba(201,160,163,0.08)',
                       }}>
                         {item.image && (
                           <img
@@ -176,7 +176,7 @@ export default function CartDrawer() {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{
                           fontFamily: 'var(--font-sans)', fontSize: '0.84rem',
-                          fontWeight: 500, color: '#3D1A1A',
+                          fontWeight: 500, color: 'var(--color-dark)',
                           margin: '0 0 0.2rem',
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                         }}>
@@ -193,20 +193,20 @@ export default function CartDrawer() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0' }}>
                           <div style={{
                             display: 'flex', alignItems: 'stretch',
-                            border: '1px solid rgba(61,26,26,0.15)', borderRadius: '7px',
+                            border: '1px solid rgba(201,160,163,0.22)', borderRadius: '7px',
                             overflow: 'hidden', height: '34px',
                           }}>
                             <button
                               onClick={() => updateQuantity(item.id, item.quantity - 1)}
                               style={{
                                 width: '36px', background: 'transparent', border: 'none',
-                                borderRight: '1px solid rgba(61,26,26,0.1)',
-                                cursor: 'pointer', color: '#3D1A1A',
-                                fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.1rem',
+                                borderRight: '1px solid rgba(201,160,163,0.18)',
+                                cursor: 'pointer', color: 'var(--color-dark)',
+                                fontFamily: 'var(--font-serif)', fontSize: '1.1rem',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 transition: 'background 0.15s ease',
                               }}
-                              onMouseEnter={e => e.currentTarget.style.background = 'rgba(61,26,26,0.05)'}
+                              onMouseEnter={e => e.currentTarget.style.background = 'rgba(201,160,163,0.08)'}
                               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                             >
                               −
@@ -214,7 +214,7 @@ export default function CartDrawer() {
                             <span style={{
                               width: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontFamily: 'var(--font-sans)', fontSize: '0.82rem',
-                              fontWeight: 600, color: '#3D1A1A',
+                              fontWeight: 600, color: 'var(--color-dark)',
                             }}>
                               {item.quantity}
                             </span>
@@ -222,13 +222,13 @@ export default function CartDrawer() {
                               onClick={() => updateQuantity(item.id, item.quantity + 1)}
                               style={{
                                 width: '36px', background: 'transparent', border: 'none',
-                                borderLeft: '1px solid rgba(61,26,26,0.1)',
-                                cursor: 'pointer', color: '#3D1A1A',
-                                fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.1rem',
+                                borderLeft: '1px solid rgba(201,160,163,0.18)',
+                                cursor: 'pointer', color: 'var(--color-dark)',
+                                fontFamily: 'var(--font-serif)', fontSize: '1.1rem',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 transition: 'background 0.15s ease',
                               }}
-                              onMouseEnter={e => e.currentTarget.style.background = 'rgba(61,26,26,0.05)'}
+                              onMouseEnter={e => e.currentTarget.style.background = 'rgba(201,160,163,0.08)'}
                               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                             >
                               +
@@ -241,7 +241,7 @@ export default function CartDrawer() {
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem', flexShrink: 0 }}>
                         <p style={{
                           fontFamily: 'var(--font-sans)', fontSize: '0.88rem',
-                          fontWeight: 700, color: '#3D1A1A', margin: 0,
+                          fontWeight: 700, color: 'var(--color-dark)', margin: 0,
                         }}>
                           AED {(Number(item.price) * item.quantity).toFixed(0)}
                         </p>
@@ -270,7 +270,7 @@ export default function CartDrawer() {
             {items.length > 0 && (
               <div style={{
                 flexShrink: 0,
-                borderTop: '1px solid rgba(61,26,26,0.09)',
+                borderTop: '1px solid rgba(201,160,163,0.15)',
                 padding: '1.25rem 1.5rem calc(1.25rem + env(safe-area-inset-bottom))',
                 background: '#FDF6F0',
               }}>
@@ -279,7 +279,7 @@ export default function CartDrawer() {
                   <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.5)' }}>
                     Subtotal
                   </span>
-                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', color: '#3D1A1A', fontWeight: 500 }}>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', color: 'var(--color-dark)', fontWeight: 500 }}>
                     AED {cartTotal.toFixed(0)}
                   </span>
                 </div>
@@ -287,7 +287,7 @@ export default function CartDrawer() {
                   <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.5)' }}>
                     Delivery
                   </span>
-                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', color: '#3D1A1A', fontWeight: 500 }}>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', color: 'var(--color-dark)', fontWeight: 500 }}>
                     AED {deliveryFee}
                   </span>
                 </div>
@@ -296,15 +296,15 @@ export default function CartDrawer() {
                 <div style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
                   padding: '0.875rem 0',
-                  borderTop: '1px solid rgba(61,26,26,0.09)',
+                  borderTop: '1px solid rgba(201,160,163,0.15)',
                   marginBottom: '1rem',
                 }}>
-                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', fontWeight: 600, color: '#3D1A1A' }}>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', fontWeight: 600, color: 'var(--color-dark)' }}>
                     Total
                   </span>
                   <span style={{
-                    fontFamily: 'Cormorant Garamond, Georgia, serif',
-                    fontSize: '1.5rem', fontWeight: 400, color: '#3D1A1A',
+                    fontFamily: 'var(--font-serif)',
+                    fontSize: '1.5rem', fontWeight: 400, color: 'var(--color-dark)',
                   }}>
                     AED {(cartTotal + deliveryFee).toFixed(0)}
                   </span>
@@ -316,7 +316,7 @@ export default function CartDrawer() {
                   whileTap={{ scale: 0.98 }}
                   style={{
                     width: '100%', padding: '1.05rem',
-                    background: '#3D1A1A', color: 'var(--color-gold)',
+                    background: 'var(--color-dark)', color: '#fff',
                     border: 'none', borderRadius: '10px', cursor: 'pointer',
                     fontFamily: 'var(--font-sans)', fontSize: '0.78rem',
                     letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600,
@@ -324,8 +324,8 @@ export default function CartDrawer() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
                     transition: 'background 0.25s ease',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-gold)'; e.currentTarget.style.color = '#3D1A1A' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = '#3D1A1A'; e.currentTarget.style.color = 'var(--color-gold)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-gold)'; e.currentTarget.style.color = '#3D2020' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-dark)'; e.currentTarget.style.color = '#fff' }}
                 >
                   Checkout
                   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" width="14" height="14">
@@ -343,8 +343,8 @@ export default function CartDrawer() {
                     color: 'rgba(61,26,26,0.45)', letterSpacing: '0.1em',
                     textTransform: 'uppercase', transition: 'color 0.2s ease',
                   }}
-                  onMouseEnter={e => e.currentTarget.style.color = '#3D1A1A'}
-                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(61,26,26,0.45)'}
+                  onMouseEnter={e => e.currentTarget.style.color = 'var(--color-dark)'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(100,70,72,0.5)'}
                 >
                   Continue Shopping
                 </button>

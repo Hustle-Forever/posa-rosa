@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+﻿import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2, ShoppingBag } from 'lucide-react'
 import { useCart } from '../context/CartContext'
@@ -15,7 +15,7 @@ function SummaryRow({ label, value, bold }) {
         letterSpacing: '0.03em',
       }}>{label}</span>
       <span style={{
-        fontFamily: bold ? 'Cormorant Garamond, Georgia, serif' : 'var(--font-sans)',
+        fontFamily: bold ? 'var(--font-serif)' : 'var(--font-sans)',
         fontSize: bold ? '1.2rem' : '0.85rem',
         color: 'var(--color-dark)',
         fontWeight: bold ? 500 : 400,
@@ -54,7 +54,7 @@ export default function CartPage() {
         {/* Heading */}
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <h1 style={{
-            fontFamily: 'Cormorant Garamond, Georgia, serif',
+            fontFamily: 'var(--font-serif)',
             fontSize: 'clamp(2.25rem, 5vw, 3.75rem)',
             fontWeight: 300,
             color: 'var(--color-dark)',
@@ -86,7 +86,7 @@ export default function CartPage() {
           >
             <ShoppingBag size={58} strokeWidth={1} color="var(--color-gold)" style={{ marginBottom: '1.5rem' }} />
             <h2 style={{
-              fontFamily: 'Cormorant Garamond, Georgia, serif',
+              fontFamily: 'var(--font-serif)',
               fontSize: '1.875rem',
               fontWeight: 300,
               color: 'var(--color-dark)',
@@ -107,7 +107,7 @@ export default function CartPage() {
               display: 'inline-block',
               padding: '0.9rem 2.75rem',
               background: 'var(--color-dark)',
-              color: 'var(--color-gold)',
+              color: '#fff',
               fontFamily: 'var(--font-sans)',
               fontSize: '0.72rem',
               letterSpacing: '0.14em',
@@ -165,7 +165,7 @@ export default function CartPage() {
                         margin: '0 0 0.25rem',
                       }}>{item.collection}</p>
                       <h3 style={{
-                        fontFamily: 'Cormorant Garamond, Georgia, serif',
+                        fontFamily: 'var(--font-serif)',
                         fontSize: '1.25rem',
                         fontWeight: 400,
                         color: 'var(--color-dark)',
@@ -194,7 +194,7 @@ export default function CartPage() {
                           }}
                         >−</button>
                         <span style={{
-                          fontFamily: 'Cormorant Garamond, Georgia, serif',
+                          fontFamily: 'var(--font-serif)',
                           fontSize: '1.1rem', color: 'var(--color-dark)',
                           minWidth: '1.25rem', textAlign: 'center',
                         }}>{item.quantity}</span>
@@ -249,7 +249,7 @@ export default function CartPage() {
                 boxShadow: '0 4px 32px rgba(61,26,26,0.07)',
               }}>
                 <h3 style={{
-                  fontFamily: 'Cormorant Garamond, Georgia, serif',
+                  fontFamily: 'var(--font-serif)',
                   fontSize: '1.5rem',
                   fontWeight: 400,
                   color: 'var(--color-dark)',
@@ -272,8 +272,8 @@ export default function CartPage() {
                       display: 'block',
                       width: '100%',
                       padding: '1rem',
-                      backgroundColor: '#3D1A1A',
-                      color: '#FDF6F0',
+                      backgroundColor: 'var(--color-dark)',
+                      color: '#fff',
                       textAlign: 'center',
                       textDecoration: 'none',
                       fontFamily: 'Plus Jakarta Sans',

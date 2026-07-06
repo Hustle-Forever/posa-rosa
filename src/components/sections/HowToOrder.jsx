@@ -13,11 +13,26 @@ export default function HowToOrder() {
     <section
       id="order"
       style={{
-        backgroundColor: '#3D1A1A',
+        position: 'relative',
+        overflow: 'hidden',
         padding: 'clamp(5rem, 10vw, 9rem) clamp(1.2rem, 5vw, 5rem)',
       }}
     >
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      {/* Warpaper botanical texture */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: 'url("/assets/brand-reference/Warpaper.png")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        zIndex: 0,
+      }} />
+      {/* Deep rose overlay */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'rgba(148, 88, 95, 0.80)',
+        zIndex: 1,
+      }} />
+      <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
         {/* Title */}
         <motion.div
           initial={{ opacity: 0, y: 44 }}

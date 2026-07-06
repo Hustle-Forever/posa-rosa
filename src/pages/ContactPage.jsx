@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+﻿import { motion } from 'framer-motion'
 
 const WA_URL  = 'https://wa.me/971500000000?text=' + encodeURIComponent("Hi! I'd like to get in touch with Posa Rosa 🦋")
 const EMAIL   = 'hello@posarosa.ae'
@@ -56,10 +56,10 @@ export default function ContactPage() {
         <motion.h1
           {...fade(0.12)}
           style={{
-            fontFamily: 'Cormorant Garamond, Georgia, serif',
+            fontFamily: 'var(--font-serif)',
             fontSize: 'clamp(2.6rem, 8vw, 4.5rem)',
             fontWeight: 300,
-            color: '#3D1A1A',
+            color: 'var(--color-dark)',
             letterSpacing: '0.04em',
             lineHeight: 1.1,
             margin: '0 0 1.2rem',
@@ -155,8 +155,8 @@ export default function ContactPage() {
             width: '100%',
             padding: '1rem',
             background: '#fff',
-            color: '#3D1A1A',
-            border: '1px solid rgba(61,26,26,0.15)',
+            color: 'var(--color-dark)',
+            border: '1px solid rgba(201,160,163,0.25)',
             borderRadius: '10px',
             fontFamily: 'var(--font-sans)',
             fontSize: '0.84rem',
@@ -167,8 +167,8 @@ export default function ContactPage() {
             boxSizing: 'border-box',
             opacity: 0.85,
           }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = '#3D1A1A'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(61,26,26,0.08)' }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(61,26,26,0.15)'; e.currentTarget.style.boxShadow = 'none' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-dark)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(201,160,163,0.2)' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(201,160,163,0.25)'; e.currentTarget.style.boxShadow = 'none' }}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="18" height="18">
             <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" strokeLinecap="round" strokeLinejoin="round"/>
@@ -191,8 +191,8 @@ export default function ContactPage() {
             width: '100%',
             padding: '1rem',
             background: '#fff',
-            color: '#3D1A1A',
-            border: '1px solid rgba(61,26,26,0.15)',
+            color: 'var(--color-dark)',
+            border: '1px solid rgba(201,160,163,0.25)',
             borderRadius: '10px',
             fontFamily: 'var(--font-sans)',
             fontSize: '0.84rem',
@@ -203,8 +203,8 @@ export default function ContactPage() {
             boxSizing: 'border-box',
             opacity: 0.85,
           }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = '#3D1A1A'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(61,26,26,0.08)' }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(61,26,26,0.15)'; e.currentTarget.style.boxShadow = 'none' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-dark)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(201,160,163,0.2)' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(201,160,163,0.25)'; e.currentTarget.style.boxShadow = 'none' }}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="18" height="18">
             <rect x="2" y="2" width="20" height="20" rx="5" ry="5" strokeLinecap="round" strokeLinejoin="round"/>

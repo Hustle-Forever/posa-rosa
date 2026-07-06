@@ -160,19 +160,17 @@ export default function Hero() {
           gap: 'clamp(1rem, 2.5vh, 1.6rem)',
         }}
       >
-        <p
+        <img
           ref={labelRef}
+          src="/assets/logo/logo.png"
+          alt="Posa Rosa"
           style={{
-            fontFamily: 'var(--font-sans)',
-            fontSize: '1.8rem',
-            letterSpacing: '0.32em',
-            textTransform: 'uppercase',
-            color: 'var(--color-pink)',
-            fontWeight: 400,
+            height: 'clamp(80px, 13vw, 155px)',
+            width: 'auto',
+            filter: 'brightness(0) invert(1)',
+            opacity: 0.95,
           }}
-        >
-          Posa Rosa
-        </p>
+        />
 
         <h1
           ref={headingRef}
@@ -243,8 +241,8 @@ function pillBtn(variant) {
   if (variant === 'filled') {
     return {
       ...base,
-      background: 'rgba(61,26,26,0.92)',
-      color: '#FDF6F0',
+      background: 'rgba(201,160,163,0.88)',
+      color: '#fff',
       boxShadow: '0 8px 36px rgba(0,0,0,0.28)',
       backdropFilter: 'blur(8px)',
     }

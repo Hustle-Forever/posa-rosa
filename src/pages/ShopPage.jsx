@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { getProducts, normalizeProduct } from '../lib/shopify'
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock'
-import { EMIRATE_AREAS, EMIRATES, getDeliveryFee, getFulfillment, setFulfillment } from '../lib/fulfillment'
+import { EMIRATE_AREAS, EMIRATES, getDeliveryFee, getDeliveryTiming, getFulfillment, setFulfillment } from '../lib/fulfillment'
 
 const BOX_SIZE   = 20
 const BOX_PRICE  = 165
@@ -49,7 +49,7 @@ function FulfillmentSelector({ onComplete }) {
             <span style={{
               fontFamily: 'var(--font-sans)', fontSize: '0.6rem', letterSpacing: '0.14em',
               textTransform: 'uppercase', fontWeight: 600,
-              color: i === arr.length - 1 ? '#3D1A1A' : 'rgba(61,26,26,0.35)',
+              color: i === arr.length - 1 ? 'var(--color-dark)' : 'rgba(100,70,72,0.4)',
             }}>{label}</span>
             {i < arr.length - 1 && (
               <svg viewBox="0 0 8 8" fill="none" width="7" height="7">
@@ -70,7 +70,7 @@ function FulfillmentSelector({ onComplete }) {
           >
             <div style={{ marginBottom: '2rem' }}>
               <div>
-                <h2 style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: 'clamp(1.5rem, 3.5vw, 2rem)', fontWeight: 300, color: '#3D1A1A', margin: 0 }}>
+                <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.5rem, 3.5vw, 2rem)', fontWeight: 300, color: 'var(--color-dark)', margin: 0 }}>
                   Which emirate are you in?
                 </h2>
               </div>
@@ -81,16 +81,16 @@ function FulfillmentSelector({ onComplete }) {
                 <button key={em} onClick={() => pickEmirate(em)}
                   data-testid={`emirate-${em.replace(/\s+/g, '-')}`}
                   style={{
-                    background: '#fff', border: '1.5px solid rgba(61,26,26,0.12)',
+                    background: '#fff', border: '1.5px solid rgba(201,160,163,0.3)',
                     borderRadius: '12px', padding: '1.1rem 1.25rem',
                     cursor: 'pointer', textAlign: 'left',
                     transition: 'all 0.2s ease',
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#3D1A1A'; e.currentTarget.style.background = '#FAF3EE' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(61,26,26,0.12)'; e.currentTarget.style.background = '#fff' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-dark)'; e.currentTarget.style.background = '#FAF3EE' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(201,160,163,0.3)'; e.currentTarget.style.background = '#fff' }}
                 >
-                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', fontWeight: 500, color: '#3D1A1A' }}>{em}</span>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', fontWeight: 500, color: 'var(--color-dark)' }}>{em}</span>
                   <span style={{
                     fontFamily: 'var(--font-sans)', fontSize: '0.58rem', fontWeight: 600,
                     color: em === 'Abu Dhabi' ? 'var(--color-gold)' : 'rgba(61,26,26,0.45)',
@@ -112,13 +112,13 @@ function FulfillmentSelector({ onComplete }) {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
               <button onClick={() => setSelectedEm('')}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.4rem', color: '#3D1A1A', display: 'flex', alignItems: 'center' }}>
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.4rem', color: 'var(--color-dark)', display: 'flex', alignItems: 'center' }}>
                 <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
                   <path d="M13 4l-6 6 6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
               <div>
-                <h2 style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: 'clamp(1.5rem, 3.5vw, 2rem)', fontWeight: 300, color: '#3D1A1A', margin: 0 }}>
+                <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.5rem, 3.5vw, 2rem)', fontWeight: 300, color: 'var(--color-dark)', margin: 0 }}>
                   Select your area in {selectedEm}
                 </h2>
               </div>
@@ -127,14 +127,23 @@ function FulfillmentSelector({ onComplete }) {
             <div data-testid="area-fee-info" style={{
               background: 'rgba(201,169,110,0.08)', borderRadius: '10px',
               padding: '0.6rem 1rem', marginBottom: '1.5rem', marginLeft: '2.25rem',
-              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap',
             }}>
               <svg viewBox="0 0 16 16" fill="none" width="13" height="13">
                 <circle cx="8" cy="8" r="7" stroke="var(--color-gold)" strokeWidth="1.5"/>
                 <path d="M8 5v4M8 11v.5" stroke="var(--color-gold)" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
-              <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.66rem', color: '#3D1A1A', letterSpacing: '0.04em' }}>
+              <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.66rem', color: 'var(--color-dark)', letterSpacing: '0.04em' }}>
                 Delivery fee: <strong>AED {fee}</strong>
+              </span>
+              <span style={{
+                fontFamily: 'var(--font-sans)', fontSize: '0.62rem', letterSpacing: '0.06em',
+                padding: '0.15rem 0.5rem', borderRadius: '100px',
+                background: selectedEm === 'Abu Dhabi' ? 'rgba(201,169,110,0.18)' : 'rgba(201,160,163,0.2)',
+                color: selectedEm === 'Abu Dhabi' ? 'var(--color-gold)' : 'var(--color-dark)',
+                fontWeight: 600,
+              }}>
+                {selectedEm === 'Abu Dhabi' ? 'Same-day delivery' : 'Next-day delivery'}
               </span>
             </div>
 
@@ -144,9 +153,9 @@ function FulfillmentSelector({ onComplete }) {
                   onClick={() => setSelectedArea(area)}
                   data-testid={`area-${area.replace(/\s+/g, '-')}`}
                   style={{
-                    background: selectedArea === area ? '#3D1A1A' : '#fff',
-                    color: selectedArea === area ? '#FDF6F0' : '#3D1A1A',
-                    border: `1.5px solid ${selectedArea === area ? '#3D1A1A' : 'rgba(61,26,26,0.12)'}`,
+                    background: selectedArea === area ? 'var(--color-dark)' : '#fff',
+                    color: selectedArea === area ? '#fff' : 'var(--color-dark)',
+                    border: `1.5px solid ${selectedArea === area ? 'var(--color-dark)' : 'rgba(201,160,163,0.28)'}`,
                     borderRadius: '10px', padding: '0.875rem 1.25rem',
                     cursor: 'pointer', textAlign: 'left',
                     fontFamily: 'var(--font-sans)', fontSize: '0.84rem', fontWeight: selectedArea === area ? 600 : 400,
@@ -168,9 +177,9 @@ function FulfillmentSelector({ onComplete }) {
                   data-testid="area-other-input"
                   style={{
                     width: '100%', padding: '0.82rem 1rem', boxSizing: 'border-box',
-                    background: '#fff', border: '1.5px solid #3D1A1A',
+                    background: '#fff', border: '1.5px solid var(--color-dark)',
                     borderRadius: '10px', fontFamily: 'var(--font-sans)',
-                    fontSize: '0.86rem', color: '#3D1A1A', outline: 'none',
+                    fontSize: '0.86rem', color: 'var(--color-dark)', outline: 'none',
                   }}
                   autoFocus
                 />
@@ -183,8 +192,8 @@ function FulfillmentSelector({ onComplete }) {
               data-testid="btn-area-continue"
               style={{
                 width: '100%', padding: '1rem',
-                background: canContinueArea ? '#3D1A1A' : 'rgba(61,26,26,0.18)',
-                color: canContinueArea ? 'var(--color-gold)' : 'rgba(61,26,26,0.38)',
+                background: canContinueArea ? 'var(--color-dark)' : 'rgba(201,160,163,0.2)',
+                color: canContinueArea ? '#fff' : 'rgba(100,70,72,0.45)',
                 border: 'none', borderRadius: '10px',
                 fontFamily: 'var(--font-sans)', fontSize: '0.72rem',
                 letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600,
@@ -212,15 +221,15 @@ function FulfillmentSummary({ data, onChange }) {
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       gap: '0.875rem', padding: '0.75rem 1.5rem',
-      borderBottom: '1px solid rgba(61,26,26,0.09)',
-      background: 'rgba(61,26,26,0.025)',
+      borderBottom: '1px solid rgba(201,160,163,0.18)',
+      background: 'rgba(201,160,163,0.06)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <div style={{
           width: '7px', height: '7px', borderRadius: '50%',
           background: 'var(--color-gold)', flexShrink: 0,
         }} />
-        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.68rem', color: '#3D1A1A', letterSpacing: '0.04em' }}>
+        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.68rem', color: 'var(--color-dark)', letterSpacing: '0.04em' }}>
           {`Delivery to ${data.emirate}${data.area ? ` · ${data.area}` : ''} — AED ${fee}`}
         </span>
       </div>
@@ -228,13 +237,13 @@ function FulfillmentSummary({ data, onChange }) {
         style={{
           background: 'none', border: 'none', cursor: 'pointer',
           fontFamily: 'var(--font-sans)', fontSize: '0.62rem',
-          color: 'rgba(61,26,26,0.45)', letterSpacing: '0.08em', textTransform: 'uppercase',
+          color: 'rgba(100,70,72,0.55)', letterSpacing: '0.08em', textTransform: 'uppercase',
           fontWeight: 500, padding: '0.2rem 0.5rem',
           borderRadius: '4px', transition: 'color 0.18s ease',
           textDecoration: 'underline', textDecorationStyle: 'dotted',
         }}
-        onMouseEnter={e => e.currentTarget.style.color = '#3D1A1A'}
-        onMouseLeave={e => e.currentTarget.style.color = 'rgba(61,26,26,0.45)'}
+        onMouseEnter={e => e.currentTarget.style.color = 'var(--color-dark)'}
+        onMouseLeave={e => e.currentTarget.style.color = 'rgba(100,70,72,0.55)'}
       >
         Change
       </button>
@@ -256,12 +265,12 @@ function MixBoxCard({ onOpen }) {
       data-testid="mix-box-card"
       style={{
         gridColumn: '1 / -1',
-        background: '#3D1A1A',
+        background: 'var(--color-dark)',
         borderRadius: '16px', overflow: 'hidden',
         cursor: 'pointer', position: 'relative',
         minHeight: '160px',
         display: 'flex', alignItems: 'center',
-        boxShadow: '0 4px 28px rgba(61,26,26,0.18)',
+        boxShadow: '0 4px 28px rgba(201,160,163,0.35)',
         transition: 'transform 0.35s ease, box-shadow 0.35s ease',
       }}
     >
@@ -281,7 +290,7 @@ function MixBoxCard({ onOpen }) {
               Create Your Own
             </span>
             <h3 style={{
-              fontFamily: 'Cormorant Garamond, Georgia, serif',
+              fontFamily: 'var(--font-serif)',
               fontSize: 'clamp(1.7rem, 4vw, 2.6rem)', fontWeight: 300,
               color: '#FDF6F0', margin: '0 0 0.5rem', lineHeight: 1.1,
             }}>
@@ -401,7 +410,7 @@ function MixBoxModal({ products, onClose }) {
   useEffect(() => { lockBodyScroll(); return unlockBodyScroll }, [])
 
   // Progress bar color
-  const barColor = isComplete ? 'var(--color-gold)' : totalPcs > BOX_SIZE ? '#c0392b' : '#3D1A1A'
+  const barColor = isComplete ? 'var(--color-gold)' : totalPcs > BOX_SIZE ? '#c0392b' : 'var(--color-dark)'
 
   return (
     <AnimatePresence>
@@ -430,9 +439,9 @@ function MixBoxModal({ products, onClose }) {
             style={{
               position: 'absolute', top: '1rem', right: '1rem', zIndex: 10,
               width: '34px', height: '34px', borderRadius: '50%',
-              background: 'rgba(61,26,26,0.08)', border: 'none',
+              background: 'rgba(201,160,163,0.12)', border: 'none',
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#3D1A1A',
+              color: 'var(--color-dark)',
             }}
           >
             <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.75" width="14" height="14">
@@ -444,7 +453,7 @@ function MixBoxModal({ products, onClose }) {
             <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.58rem', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--color-gold)', fontWeight: 600 }}>
               Customize
             </span>
-            <h2 style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: 'clamp(1.7rem, 5vw, 2.2rem)', fontWeight: 400, color: '#3D1A1A', margin: '0.3rem 0 0.25rem' }}>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.7rem, 5vw, 2.2rem)', fontWeight: 400, color: 'var(--color-dark)', margin: '0.3rem 0 0.25rem' }}>
               Build Your Mix Box
             </h2>
             <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.5)', margin: '0 0 1.5rem', letterSpacing: '0.04em' }}>
@@ -466,7 +475,7 @@ function MixBoxModal({ products, onClose }) {
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.4rem' }}>
                 <span style={{
                   fontFamily: 'var(--font-sans)', fontSize: '0.72rem', fontWeight: 600,
-                  color: isComplete ? 'var(--color-gold)' : '#3D1A1A',
+                  color: isComplete ? 'var(--color-gold)' : 'var(--color-dark)',
                   transition: 'color 0.3s ease',
                 }}>
                   {totalPcs} / {BOX_SIZE} pieces
@@ -509,7 +518,7 @@ function MixBoxModal({ products, onClose }) {
                   {/* Thumbnail */}
                   <div style={{
                     width: '52px', height: '52px', borderRadius: '8px', flexShrink: 0, overflow: 'hidden',
-                    background: 'rgba(61,26,26,0.05)', border: `2px solid ${selected ? '#3D1A1A' : 'transparent'}`,
+                    background: 'rgba(201,160,163,0.06)', border: `2px solid ${selected ? 'var(--color-dark)' : 'transparent'}`,
                     transition: 'border-color 0.18s ease',
                   }}>
                     {product.image && <img src={product.image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
@@ -517,7 +526,7 @@ function MixBoxModal({ products, onClose }) {
 
                   {/* Name */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', fontWeight: selected ? 600 : 400, color: '#3D1A1A', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', fontWeight: selected ? 600 : 400, color: 'var(--color-dark)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {product.name}
                     </p>
                   </div>
@@ -527,7 +536,7 @@ function MixBoxModal({ products, onClose }) {
                     display: 'flex', alignItems: 'stretch',
                     border: '1px solid rgba(61,26,26,0.18)', borderRadius: '8px',
                     overflow: 'hidden', height: '36px', flexShrink: 0,
-                    background: selected ? '#3D1A1A' : '#fff',
+                    background: selected ? 'var(--color-dark)' : '#fff',
                     transition: 'background 0.18s ease',
                   }}>
                     <button onClick={() => decrement(product.id)} disabled={!canDec}
@@ -536,8 +545,8 @@ function MixBoxModal({ products, onClose }) {
                         width: '36px', background: 'transparent', border: 'none',
                         borderRight: `1px solid ${selected ? 'rgba(253,246,240,0.15)' : 'rgba(61,26,26,0.13)'}`,
                         cursor: canDec ? 'pointer' : 'default',
-                        color: selected ? '#FDF6F0' : '#3D1A1A',
-                        fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.2rem',
+                        color: selected ? '#FDF6F0' : 'var(--color-dark)',
+                        fontFamily: 'var(--font-serif)', fontSize: '1.2rem',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         opacity: canDec ? 1 : 0.3,
                       }}
@@ -545,7 +554,7 @@ function MixBoxModal({ products, onClose }) {
                     <span style={{
                       width: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontFamily: 'var(--font-sans)', fontSize: '0.82rem', fontWeight: 600,
-                      color: selected ? '#FDF6F0' : '#3D1A1A',
+                      color: selected ? '#FDF6F0' : 'var(--color-dark)',
                     }}>{qty}</span>
                     <button onClick={() => increment(product.id)} disabled={!canInc}
                       aria-label={`Add ${product.name}`}
@@ -553,8 +562,8 @@ function MixBoxModal({ products, onClose }) {
                         width: '36px', background: 'transparent', border: 'none',
                         borderLeft: `1px solid ${selected ? 'rgba(253,246,240,0.15)' : 'rgba(61,26,26,0.13)'}`,
                         cursor: canInc ? 'pointer' : 'default',
-                        color: selected ? '#FDF6F0' : '#3D1A1A',
-                        fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.2rem',
+                        color: selected ? '#FDF6F0' : 'var(--color-dark)',
+                        fontFamily: 'var(--font-serif)', fontSize: '1.2rem',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         opacity: canInc ? 1 : 0.3,
                       }}
@@ -585,8 +594,8 @@ function MixBoxModal({ products, onClose }) {
               data-testid="mixbox-add-to-cart"
               style={{
                 width: '100%', padding: '1rem',
-                background: added ? 'var(--color-gold)' : isComplete ? '#3D1A1A' : 'rgba(61,26,26,0.15)',
-                color: added ? '#3D1A1A' : isComplete ? 'var(--color-gold)' : 'rgba(61,26,26,0.35)',
+                background: added ? 'var(--color-gold)' : isComplete ? 'var(--color-dark)' : 'rgba(201,160,163,0.2)',
+                color: added ? '#3D2020' : isComplete ? '#fff' : 'rgba(100,70,72,0.45)',
                 border: 'none', borderRadius: '10px',
                 fontFamily: 'var(--font-sans)', fontSize: '0.72rem',
                 letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600,
@@ -651,12 +660,12 @@ function ProductModal({ product, onClose }) {
             style={{
               position: 'absolute', top: '1rem', right: '1rem', zIndex: 10,
               width: '34px', height: '34px', borderRadius: '50%',
-              background: 'rgba(61,26,26,0.08)', border: 'none',
+              background: 'rgba(201,160,163,0.12)', border: 'none',
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#3D1A1A', transition: 'background 0.2s ease',
+              color: 'var(--color-dark)', transition: 'background 0.2s ease',
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(61,26,26,0.14)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(61,26,26,0.08)'}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(201,160,163,0.22)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(201,160,163,0.12)'}
           >
             <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.75" width="14" height="14">
               <path d="M2 2l14 14M16 2L2 16" strokeLinecap="round"/>
@@ -682,10 +691,10 @@ function ProductModal({ product, onClose }) {
                 {product.collection}
               </span>
             )}
-            <h2 style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: 'clamp(1.6rem, 5vw, 2.2rem)', fontWeight: 400, color: '#3D1A1A', letterSpacing: '0.02em', lineHeight: 1.2, margin: '0 0 0.5rem' }}>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.6rem, 5vw, 2.2rem)', fontWeight: 400, color: 'var(--color-dark)', letterSpacing: '0.02em', lineHeight: 1.2, margin: '0 0 0.5rem' }}>
               {product.name}
             </h2>
-            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '1.05rem', fontWeight: 700, color: '#3D1A1A', margin: '0 0 1rem', letterSpacing: '0.02em' }}>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '1.05rem', fontWeight: 700, color: 'var(--color-dark)', margin: '0 0 1rem', letterSpacing: '0.02em' }}>
               AED {Number(product.price).toFixed(0)}
               {product.unit && <span style={{ fontWeight: 400, opacity: 0.42, fontSize: '0.82rem', marginLeft: '0.3em' }}>/ {product.unit}</span>}
             </p>
@@ -696,16 +705,16 @@ function ProductModal({ product, onClose }) {
             )}
 
             <div style={{ display: 'flex', gap: '0.875rem', alignItems: 'stretch' }}>
-              <div style={{ display: 'flex', alignItems: 'stretch', border: '1px solid rgba(61,26,26,0.18)', borderRadius: '8px', overflow: 'hidden', height: '48px', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'stretch', border: '1px solid rgba(201,160,163,0.28)', borderRadius: '8px', overflow: 'hidden', height: '48px', flexShrink: 0 }}>
                 <button onClick={() => setQty(q => Math.max(1, q - 1))}
-                  style={{ width: '42px', background: 'transparent', border: 'none', borderRight: '1px solid rgba(61,26,26,0.13)', cursor: 'pointer', color: '#3D1A1A', fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  style={{ width: '42px', background: 'transparent', border: 'none', borderRight: '1px solid rgba(201,160,163,0.2)', cursor: 'pointer', color: 'var(--color-dark)', fontFamily: 'var(--font-serif)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   −
                 </button>
-                <span style={{ width: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.1rem', color: '#3D1A1A' }}>
+                <span style={{ width: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-serif)', fontSize: '1.1rem', color: 'var(--color-dark)' }}>
                   {qty}
                 </span>
                 <button onClick={() => setQty(q => q + 1)}
-                  style={{ width: '42px', background: 'transparent', border: 'none', borderLeft: '1px solid rgba(61,26,26,0.13)', cursor: 'pointer', color: '#3D1A1A', fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  style={{ width: '42px', background: 'transparent', border: 'none', borderLeft: '1px solid rgba(201,160,163,0.2)', cursor: 'pointer', color: 'var(--color-dark)', fontFamily: 'var(--font-serif)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   +
                 </button>
               </div>
@@ -714,8 +723,8 @@ function ProductModal({ product, onClose }) {
                 animate={added ? { scale: [1, 1.02, 1] } : { scale: 1 }}
                 style={{
                   flex: 1, height: '48px',
-                  background: added ? 'var(--color-gold)' : '#3D1A1A',
-                  color: added ? '#3D1A1A' : 'var(--color-gold)',
+                  background: added ? 'var(--color-gold)' : 'var(--color-dark)',
+                  color: added ? '#3D2020' : '#fff',
                   border: 'none', borderRadius: '8px', cursor: 'pointer',
                   fontFamily: 'var(--font-sans)', fontSize: '0.68rem',
                   letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600,
@@ -761,7 +770,7 @@ function ProductCard({ product, onOpen }) {
         {product.collection && (
           <span style={{
             position: 'absolute', top: '0.75rem', left: '0.75rem',
-            background: 'rgba(253,246,240,0.9)', color: '#3D1A1A',
+            background: 'rgba(253,246,240,0.9)', color: 'var(--color-dark)',
             fontFamily: 'var(--font-sans)', fontSize: '0.55rem',
             letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 600,
             padding: '0.28rem 0.65rem', borderRadius: '100px',
@@ -772,10 +781,10 @@ function ProductCard({ product, onOpen }) {
       </div>
 
       <div style={{ padding: '1rem 1.1rem 1.2rem' }}>
-        <h3 style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: 'clamp(1rem, 3vw, 1.2rem)', fontWeight: 400, color: '#3D1A1A', lineHeight: 1.25, margin: '0 0 0.3rem', letterSpacing: '0.01em' }}>
+        <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1rem, 3vw, 1.2rem)', fontWeight: 400, color: 'var(--color-dark)', lineHeight: 1.25, margin: '0 0 0.3rem', letterSpacing: '0.01em' }}>
           {product.name}
         </h3>
-        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', fontWeight: 700, color: '#3D1A1A', margin: 0, letterSpacing: '0.03em' }}>
+        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-dark)', margin: 0, letterSpacing: '0.03em' }}>
           AED {Number(product.price).toFixed(0)}
           {product.unit && <span style={{ fontWeight: 400, opacity: 0.42, fontSize: '0.68rem', marginLeft: '0.28em' }}>/ {product.unit}</span>}
         </p>
@@ -880,7 +889,7 @@ export default function ShopPage() {
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(22,7,7,0.52)' }} />
         <div style={{ position: 'relative', zIndex: 1, padding: '0 2rem' }}>
           <motion.h1 initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-            style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: 'clamp(2.6rem, 7vw, 5.5rem)', fontWeight: 300, color: '#FDF6F0', margin: 0, letterSpacing: '0.06em', lineHeight: 1.1 }}>
+            style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(2.6rem, 7vw, 5.5rem)', fontWeight: 300, color: '#FDF6F0', margin: 0, letterSpacing: '0.06em', lineHeight: 1.1 }}>
             Our Collection
           </motion.h1>
           <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.7 }}
@@ -916,9 +925,9 @@ export default function ShopPage() {
                 <button key={col} className="shop-filter-btn" onClick={() => setActiveFilter(col)}
                   style={{
                     padding: '0.5rem 1.25rem', borderRadius: '100px',
-                    border: `1px solid ${active ? '#3D1A1A' : 'rgba(61,26,26,0.2)'}`,
-                    background: active ? '#3D1A1A' : 'transparent',
-                    color: active ? '#FDF6F0' : '#3D1A1A',
+                    border: `1px solid ${active ? 'var(--color-dark)' : 'rgba(201,160,163,0.3)'}`,
+                    background: active ? 'var(--color-dark)' : 'transparent',
+                    color: active ? '#FDF6F0' : 'var(--color-dark)',
                     fontFamily: 'var(--font-sans)', fontSize: '0.66rem',
                     letterSpacing: '0.1em', textTransform: 'uppercase',
                     cursor: 'pointer', fontWeight: active ? 600 : 400,
@@ -962,7 +971,7 @@ export default function ShopPage() {
           {!loading && products.length === 0 && (
             <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 2rem 7rem', textAlign: 'center' }}>
-              <p style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 300, color: '#3D1A1A', margin: '0 0 0.75rem', letterSpacing: '0.05em' }}>Coming Soon</p>
+              <p style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 300, color: 'var(--color-dark)', margin: '0 0 0.75rem', letterSpacing: '0.05em' }}>Coming Soon</p>
               <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(61,26,26,0.42)', margin: 0 }}>Something beautiful is on its way</p>
             </motion.div>
           )}

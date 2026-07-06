@@ -246,8 +246,11 @@ exports.handler = async (event) => {
     ...(i.mixBoxFlavors || []).map(f => `  ${f.name} × ${f.qty}`),
   ])
 
+  const deliveryTiming = emirate === 'Abu Dhabi' ? 'Same-day' : 'Next-day'
+
   const noteLines = [
     `⚠ FULFILLMENT: DELIVERY — ${emirate} · ${delivery.area}`,
+    `DELIVERY TIMING: ${deliveryTiming} (${emirate})`,
     `DELIVERY FEE: AED ${deliveryFee}`,
     `DATE: ${delivery.date}`,
     `TIME: ${delivery.timeSlot}`,

@@ -43,7 +43,7 @@ export default function Navbar() {
         height: 'var(--nav-h)', zIndex: 90,
         transition: 'background-color 0.45s ease, box-shadow 0.45s ease',
         backgroundColor: isScrolled ? '#FDF6F0' : 'transparent',
-        boxShadow: isScrolled ? '0 1px 24px rgba(61,26,26,0.07)' : 'none',
+        boxShadow: isScrolled ? '0 1px 24px rgba(201,160,163,0.15)' : 'none',
       }}
     >
       <div style={{
@@ -163,9 +163,9 @@ export default function Navbar() {
             style={{
               position: 'absolute', top: '100%', left: 0, right: 0,
               backgroundColor: '#FDF6F0',
-              borderTop: '1px solid rgba(61,26,26,0.08)',
+              borderTop: '1px solid rgba(201,160,163,0.18)',
               display: 'flex', flexDirection: 'column',
-              boxShadow: '0 12px 40px rgba(61,26,26,0.12)',
+              boxShadow: '0 12px 40px rgba(201,160,163,0.22)',
             }}
           >
             {[
@@ -178,7 +178,7 @@ export default function Navbar() {
             ].map((item, i, arr) => {
               const st = {
                 ...mobileLinkStyle,
-                borderBottom: i < arr.length - 1 ? '1px solid rgba(61,26,26,0.06)' : 'none',
+                borderBottom: i < arr.length - 1 ? '1px solid rgba(201,160,163,0.12)' : 'none',
               }
               if (item.to) {
                 return (

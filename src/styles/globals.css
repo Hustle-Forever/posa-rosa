@@ -1,13 +1,14 @@
 :root {
   --color-bg:   #FDF6F0;
   --color-pink: #E8A0A0;
-  --color-dark: #3D1A1A;
+  --color-dark: #C9A0A3;   /* dusty rose/mauve — replaces dark brown */
+  --color-sage: #7E8B6C;   /* botanical sage green accent */
   --color-gold: #C9A96E;
   --color-text: #2A1A1A;
   --bar-h: 36px;
   --nav-h: 72px;
 
-  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-serif: 'Bodoni Moda', 'Cormorant Garamond', Georgia, serif;
   --font-sans:  'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
@@ -37,7 +38,7 @@ section[id] {
 
 /* Product card hover effects */
 .product-card {
-  box-shadow: 0 4px 32px rgba(61, 26, 26, 0.06);
+  box-shadow: 0 4px 32px rgba(201, 160, 163, 0.12);
   cursor: pointer;
 }
 
