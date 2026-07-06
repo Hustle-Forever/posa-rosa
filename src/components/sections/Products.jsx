@@ -66,7 +66,6 @@ export default function Products() {
           borderRadius={0.05}
           scrollSpeed={isMobile ? 3 : 1}
           scrollEase={0.02}
-          fontUrl="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,300;1,6..96,300&display=swap"
           font="300 24px Bodoni Moda"
         />
       </div>

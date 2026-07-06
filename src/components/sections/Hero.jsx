@@ -249,6 +249,7 @@ function pillBtn(variant) {
       color: '#fff',
       boxShadow: '0 8px 36px rgba(0,0,0,0.28)',
       backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
     }
   }
   return {
@@ -257,6 +258,7 @@ function pillBtn(variant) {
     color: '#FDF6F0',
     border: '1.5px solid rgba(253,246,240,0.55)',
     backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
   }
 }
 

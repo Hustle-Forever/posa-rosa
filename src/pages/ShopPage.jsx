@@ -419,7 +419,7 @@ function MixBoxModal({ products, onClose }) {
         onClick={onClose}
         style={{
           position: 'fixed', inset: 0, zIndex: 200,
-          background: 'rgba(22,7,7,0.55)', backdropFilter: 'blur(4px)',
+          background: 'rgba(22,7,7,0.55)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
           display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         }}
       >
@@ -640,7 +640,7 @@ function ProductModal({ product, onClose }) {
         onClick={onClose}
         style={{
           position: 'fixed', inset: 0, zIndex: 200,
-          background: 'rgba(22,7,7,0.55)', backdropFilter: 'blur(4px)',
+          background: 'rgba(22,7,7,0.55)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
           display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         }}
       >

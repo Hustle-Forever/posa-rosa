@@ -49,6 +49,7 @@ export default function CartDrawer() {
               position: 'fixed', inset: 0, zIndex: 300,
               background: 'rgba(22,7,7,0.45)',
               backdropFilter: 'blur(3px)',
+              WebkitBackdropFilter: 'blur(3px)',
             }}
           />
 
@@ -319,7 +320,7 @@ export default function CartDrawer() {
                       {giftCardQty}
                     </span>
                     <button
-                      onClick={() => setGiftCardQty(q => q + 1)}
+                      onClick={() => setGiftCardQty(q => Math.min(99, q + 1))}
                       aria-label="Add gift card"
                       style={{
                         width: '36px', background: 'transparent', border: 'none',

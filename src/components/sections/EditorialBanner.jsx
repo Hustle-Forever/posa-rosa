@@ -122,6 +122,7 @@ export default function EditorialBanner() {
             textTransform: 'uppercase',
             textDecoration: 'none',
             backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
             transition: 'background 0.35s ease, border-color 0.35s ease',
           }}
           onMouseEnter={e => {

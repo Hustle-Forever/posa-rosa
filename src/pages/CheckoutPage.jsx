@@ -11,9 +11,11 @@ const TIME_SLOTS = [
 ]
 
 function deliveryDateMin(emirate) {
+  // Compute "today" in UAE time — toISOString() is UTC and would allow
+  // yesterday's date between midnight and 4 AM UAE (UTC+4).
   const d = new Date()
   if (emirate !== 'Abu Dhabi') d.setDate(d.getDate() + 1)
-  return d.toISOString().split('T')[0]
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dubai' }).format(d)
 }
 
 function inputStyle(hasError) {
@@ -176,6 +178,10 @@ export default function CheckoutPage() {
   }
 
   async function handlePlaceOrder() {
+    if (items.length === 0) {
+      setServerError('Your cart is empty — add some chocolates before placing an order.')
+      return
+    }
     if (!validate()) return
     setLoading(true)
     setServerError(null)
@@ -212,6 +218,7 @@ export default function CheckoutPage() {
       navigate(`/order-confirmation?id=${data.orderNumber}`, {
         state: {
           orderNumber: data.orderNumber, items: [...items],
+          giftCardQty, giftCardTotal,
           delivery: { ...form, fulfillmentType: 'delivery', area: resolvedArea },
         },
       })

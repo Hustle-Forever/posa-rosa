@@ -109,8 +109,10 @@ function computeDeliveryFee(emirate) {
 }
 
 // ── Input validation ──────────────────────────────────────────────────────────
-const MAX_ITEMS = 50
-const MAX_QTY   = 100
+const MAX_ITEMS      = 50
+const MAX_QTY        = 100
+const MIX_BOX_PRICE  = 165  // server-enforced — must match BOX_PRICE in ShopPage.jsx
+const GIFT_CARD_PRICE = 5
 
 function isStr(v, max, min = 0) {
   return typeof v === 'string' && v.length >= min && v.length <= max
@@ -146,15 +148,16 @@ function validateOrder({ customer, delivery, items }) {
       // Mix Box — no variantId required; validate flavor structure
       hasValidItem = true
       if (!Number.isInteger(i.quantity) || i.quantity < 1 || i.quantity > MAX_QTY) return 'Invalid item quantity'
-      if (typeof i.price !== 'number' || !isFinite(i.price) || i.price < 0 || i.price > 100000) return 'Invalid item price'
+      // Mix Box is a custom (non-variant) Shopify line item, so the price is
+      // enforced here — never trusted from the client.
+      if (i.price !== MIX_BOX_PRICE) return 'Invalid Mix Box price'
       if (!Array.isArray(i.mixBoxFlavors) || i.mixBoxFlavors.length < 2 || i.mixBoxFlavors.length > 5) return 'Invalid Mix Box configuration'
       const totalPcs = i.mixBoxFlavors.reduce((s, f) => s + (f.qty || 0), 0)
       if (totalPcs !== 20) return 'Mix Box must total 20 pieces'
     } else {
-      if (i.variantId != null) {
-        if (!isStr(i.variantId, 120, 1)) return 'Invalid cart item'
-        hasValidItem = true
-      }
+      // Regular items must reference a Shopify variant (Shopify prices them)
+      if (!isStr(i.variantId, 120, 1)) return 'Invalid cart item'
+      hasValidItem = true
       if (!Number.isInteger(i.quantity) || i.quantity < 1 || i.quantity > MAX_QTY) return 'Invalid item quantity'
       if (typeof i.price !== 'number' || !isFinite(i.price) || i.price < 0 || i.price > 100000) return 'Invalid item price'
       if (i.name != null && !isStr(i.name, 200)) return 'Invalid item name'
@@ -212,6 +215,20 @@ exports.handler = async (event) => {
     return { statusCode: 422, headers: { ...CORS, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Invalid phone number. Please use a UAE number, e.g. 050 123 4567 or +971 50 123 4567.' }) }
   }
 
+  // Server-side total check — the client total must match what the validated
+  // items + delivery fee + gift cards actually add up to (mirrors the client's
+  // own calculation, so any mismatch means a tampered or buggy request).
+  const emirate     = delivery.emirate || 'Abu Dhabi'
+  const deliveryFee = computeDeliveryFee(emirate)
+  const expectedTotal =
+    items.reduce((sum, i) => sum + i.price * i.quantity, 0) +
+    deliveryFee +
+    giftCardQuantity * GIFT_CARD_PRICE
+
+  if (typeof total !== 'number' || !isFinite(total) || Math.abs(total - expectedTotal) > 0.01) {
+    return { statusCode: 422, headers: { ...CORS, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Order total mismatch. Please refresh the page and try again.' }) }
+  }
+
   let token
   try {
     token = await getShopifyToken()
@@ -221,14 +238,11 @@ exports.handler = async (event) => {
   }
 
   // Build Shopify line items — regular (variant) + custom (Mix Box)
-  const emirate     = delivery.emirate || 'Abu Dhabi'
-  const deliveryFee = computeDeliveryFee(emirate)
-
   const lineItems = (items || []).reduce((acc, i) => {
     if (i.customItem === 'mix-box') {
       acc.push({
         title:    'Mix Box (20 pcs)',
-        price:    String(Number(i.price).toFixed(2)),
+        price:    MIX_BOX_PRICE.toFixed(2),
         quantity: i.quantity,
       })
     } else if (i.variantId) {

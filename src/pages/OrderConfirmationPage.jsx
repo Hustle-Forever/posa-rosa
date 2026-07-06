@@ -7,8 +7,10 @@ export default function OrderConfirmationPage() {
   const [searchParams] = useSearchParams()
   const orderNumber = searchParams.get('id') ?? state?.orderNumber
 
-  const items    = state?.items    ?? []
-  const delivery = state?.delivery ?? null
+  const items         = state?.items         ?? []
+  const delivery      = state?.delivery      ?? null
+  const giftCardQty   = state?.giftCardQty   ?? 0
+  const giftCardTotal = state?.giftCardTotal ?? 0
 
   return (
     <motion.div
@@ -145,6 +147,51 @@ export default function OrderConfirmationPage() {
                   </p>
                 </div>
               ))}
+
+              {giftCardQty > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                  <img
+                    src="/assets/brand-reference/Gift-Card-front.png"
+                    alt="Posa Rosa Gift Card"
+                    style={{
+                      width: '52px',
+                      height: '52px',
+                      objectFit: 'cover',
+                      borderRadius: '6px',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{
+                      margin: 0,
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: '0.8rem',
+                      fontWeight: 500,
+                      color: 'var(--color-dark)',
+                    }}>
+                      Posa Rosa Gift Card
+                    </p>
+                    <p style={{
+                      margin: 0,
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: '0.7rem',
+                      color: 'rgba(61,26,26,0.46)',
+                    }}>
+                      ×{giftCardQty}
+                    </p>
+                  </div>
+                  <p style={{
+                    margin: 0,
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    color: 'var(--color-dark)',
+                    flexShrink: 0,
+                  }}>
+                    AED {giftCardTotal}
+                  </p>
+                </div>
+              )}
             </div>
           </motion.div>
         )}

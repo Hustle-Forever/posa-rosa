@@ -32,3 +32,8 @@ capturefinal.mjs
 # QA screenshots + Playwright artifacts (local review only)
 qa-screenshots
 .playwright-mcp
+tests/screenshots
+test-results
+playwright-report
+audit-screenshots
+screenshots
