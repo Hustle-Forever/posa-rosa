@@ -157,7 +157,7 @@ function ContactForm() {
 const labelStyle = {
   display: 'block', fontFamily: 'var(--font-sans)',
   fontSize: '0.62rem', letterSpacing: '0.16em', textTransform: 'uppercase',
-  color: 'rgba(61,26,26,0.5)', marginBottom: '0.4rem', fontWeight: 500,
+  color: 'rgba(61,26,26,0.68)', marginBottom: '0.4rem', fontWeight: 500,
 }
 
 const inputStyle = {
@@ -461,7 +461,7 @@ export default function AboutPage() {
           {...fade(0.15)}
           style={{
             fontFamily: 'var(--font-sans)', fontSize: '0.84rem',
-            color: 'rgba(61,26,26,0.55)', lineHeight: 1.7, margin: '0 0 2.5rem',
+            color: 'rgba(61,26,26,0.70)', lineHeight: 1.7, margin: '0 0 2.5rem',
           }}
         >
           Have a question, custom order, or just want to say hi? We'd love to hear from you.
@@ -546,7 +546,7 @@ export default function AboutPage() {
                 </h3>
                 <p style={{
                   fontFamily: 'var(--font-sans)', fontSize: '0.84rem',
-                  color: 'rgba(61,26,26,0.58)', lineHeight: 1.7, margin: 0,
+                  color: 'rgba(61,26,26,0.72)', lineHeight: 1.7, margin: 0,
                 }}>
                   {v.desc}
                 </p>

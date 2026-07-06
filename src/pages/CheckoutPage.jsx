@@ -80,7 +80,7 @@ function Field({ label, error, children }) {
       <label style={{
         display: 'block', fontFamily: 'var(--font-sans)',
         fontSize: '0.63rem', letterSpacing: '0.14em', textTransform: 'uppercase',
-        color: error ? '#c0392b' : 'rgba(61,26,26,0.52)',
+        color: error ? '#c0392b' : 'rgba(61,26,26,0.68)',
         marginBottom: '0.42rem', fontWeight: 500,
       }}>
         {label}
@@ -126,7 +126,7 @@ function initFormFromSession() {
 }
 
 export default function CheckoutPage() {
-  const { items, cartTotal, clearCart } = useCart()
+  const { items, cartTotal, clearCart, giftCardQty, giftCardTotal } = useCart()
   const navigate = useNavigate()
 
   const [loading,     setLoading]     = useState(false)
@@ -135,7 +135,7 @@ export default function CheckoutPage() {
   const [form,        setFormState]   = useState(initFormFromSession)
 
   const deliveryFee = getDeliveryFee(form.emirate)
-  const orderTotal  = cartTotal + deliveryFee
+  const orderTotal  = cartTotal + deliveryFee + giftCardTotal
 
   const areaOptions = EMIRATE_AREAS[form.emirate] || EMIRATE_AREAS['Abu Dhabi']
 
@@ -201,8 +201,9 @@ export default function CheckoutPage() {
             customItem:     i.customItem     || undefined,
             mixBoxFlavors:  i.mixBoxFlavors  || undefined,
           })),
-          total:       orderTotal,
-          deliveryFee: deliveryFee,
+          giftCardQuantity: giftCardQty,
+          total:            orderTotal,
+          deliveryFee:      deliveryFee,
         }),
       })
       const data = await res.json()
@@ -396,7 +397,7 @@ export default function CheckoutPage() {
                   <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.86rem', fontWeight: 600, color: 'var(--color-dark)' }}>
                     Cash on Delivery
                   </p>
-                  <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.5)' }}>
+                  <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.68)' }}>
                     Pay when your order arrives
                   </p>
                 </div>
@@ -409,7 +410,7 @@ export default function CheckoutPage() {
                 <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '1.5px solid rgba(61,26,26,0.28)', flexShrink: 0 }} />
                 <div>
                   <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.86rem', fontWeight: 600, color: 'var(--color-dark)' }}>Online Payment</p>
-                  <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.45)' }}>Coming soon</p>
+                  <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.65)' }}>Coming soon</p>
                 </div>
               </div>
             </FormSection>
@@ -419,7 +420,7 @@ export default function CheckoutPage() {
           <div className="co-sidebar" style={{ width: '360px', flexShrink: 0, position: 'sticky', top: 'calc(var(--bar-h) + var(--nav-h) + 2rem)' }}>
             <OrderSummaryCard
               items={items} cartTotal={cartTotal} orderTotal={orderTotal}
-              deliveryFee={deliveryFee}
+              deliveryFee={deliveryFee} giftCardQty={giftCardQty} giftCardTotal={giftCardTotal}
               loading={loading} serverError={serverError} errors={errors}
               onPlace={handlePlaceOrder}
             />
@@ -431,7 +432,7 @@ export default function CheckoutPage() {
       <div className="co-mobile-summary">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.5)' }}>
+            <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.68)' }}>
               {items.length} item{items.length !== 1 ? 's' : ''} · Delivery AED {deliveryFee}
             </p>
             <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: '1.4rem', fontWeight: 500, color: 'var(--color-dark)' }}>
@@ -469,7 +470,7 @@ export default function CheckoutPage() {
   )
 }
 
-function OrderSummaryCard({ items, cartTotal, orderTotal, deliveryFee, loading, serverError, errors, onPlace }) {
+function OrderSummaryCard({ items, cartTotal, orderTotal, deliveryFee, giftCardQty = 0, giftCardTotal = 0, loading, serverError, errors, onPlace }) {
   return (
     <div style={{ background: '#fff', borderRadius: '14px', padding: '2rem', boxShadow: '0 4px 32px rgba(61,26,26,0.07)' }}>
       <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.5rem', fontWeight: 400, color: 'var(--color-dark)', margin: '0 0 1.5rem' }}>
@@ -478,7 +479,7 @@ function OrderSummaryCard({ items, cartTotal, orderTotal, deliveryFee, loading, 
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', marginBottom: '1.5rem' }}>
         {items.length === 0 ? (
-          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.5)' }}>
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.68)' }}>
             No items.{' '}<Link to="/shop" style={{ color: 'var(--color-gold)', textDecoration: 'none' }}>Shop now</Link>
           </p>
         ) : items.map(item => (
@@ -498,11 +499,11 @@ function OrderSummaryCard({ items, cartTotal, orderTotal, deliveryFee, loading, 
                 {item.name}
               </p>
               {item.mixBoxFlavors && (
-                <p style={{ margin: '0.1rem 0 0', fontFamily: 'var(--font-sans)', fontSize: '0.62rem', color: 'rgba(61,26,26,0.5)', lineHeight: 1.4 }}>
+                <p style={{ margin: '0.1rem 0 0', fontFamily: 'var(--font-sans)', fontSize: '0.62rem', color: 'rgba(61,26,26,0.68)', lineHeight: 1.4 }}>
                   {item.mixBoxFlavors.map(f => `${f.name} ×${f.qty}`).join(', ')}
                 </p>
               )}
-              <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.7rem', color: 'rgba(61,26,26,0.44)' }}>×{item.quantity}</p>
+              <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.7rem', color: 'rgba(61,26,26,0.65)' }}>×{item.quantity}</p>
             </div>
             <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-dark)', flexShrink: 0 }}>
               AED {item.price * item.quantity}
@@ -515,13 +516,19 @@ function OrderSummaryCard({ items, cartTotal, orderTotal, deliveryFee, loading, 
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginBottom: '1.75rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.55)' }}>Subtotal</span>
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.70)' }}>Subtotal</span>
           <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', color: 'var(--color-dark)' }}>AED {cartTotal}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.55)' }}>Delivery</span>
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.70)' }}>Delivery</span>
           <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', color: 'var(--color-dark)' }}>AED {deliveryFee}</span>
         </div>
+        {giftCardQty > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.70)' }}>Gift Card ×{giftCardQty}</span>
+            <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', color: 'var(--color-dark)' }}>AED {giftCardTotal}</span>
+          </div>
+        )}
         <div style={{ height: '1px', background: 'rgba(61,26,26,0.09)' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
           <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', fontWeight: 600, color: 'var(--color-dark)' }}>Total</span>

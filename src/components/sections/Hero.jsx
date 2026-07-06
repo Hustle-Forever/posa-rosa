@@ -160,17 +160,21 @@ export default function Hero() {
           gap: 'clamp(1rem, 2.5vh, 1.6rem)',
         }}
       >
-        <img
+        <p
           ref={labelRef}
-          src="/assets/logo/logo.png"
-          alt="Posa Rosa"
           style={{
-            height: 'clamp(80px, 13vw, 155px)',
-            width: 'auto',
-            filter: 'brightness(0) invert(1)',
-            opacity: 0.95,
+            fontFamily: 'var(--font-serif)',
+            fontSize: 'clamp(2rem, 5vw, 4rem)',
+            fontWeight: 300,
+            color: '#FDF6F0',
+            letterSpacing: '0.25em',
+            textTransform: 'uppercase',
+            margin: 0,
+            lineHeight: 1,
           }}
-        />
+        >
+          POSAROSA
+        </p>
 
         <h1
           ref={headingRef}

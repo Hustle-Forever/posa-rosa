@@ -61,7 +61,7 @@ function GalleryItem({ product, index }) {
       <div className="gallery-overlay" style={{
         position: 'absolute',
         inset: 0,
-        background: 'linear-gradient(to top, rgba(61,26,26,0.62) 0%, transparent 55%)',
+        background: 'linear-gradient(to top, rgba(61,26,26,0.75) 0%, transparent 55%)',
         display: 'flex',
         alignItems: 'flex-end',
         padding: '1rem 1.1rem',
@@ -143,7 +143,7 @@ export default function HomeGallery() {
             fontSize: '0.7rem',
             letterSpacing: '0.2em',
             textTransform: 'uppercase',
-            color: 'rgba(61,26,26,0.42)',
+            color: 'rgba(61,26,26,0.62)',
             margin: 0,
           }}
         >

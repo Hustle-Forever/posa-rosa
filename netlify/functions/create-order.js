@@ -193,12 +193,14 @@ exports.handler = async (event) => {
     return { statusCode: 413, headers: { ...CORS, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Request too large' }) }
   }
 
-  let customer, delivery, items, total
+  let customer, delivery, items, total, giftCardQuantity
   try {
-    ;({ customer, delivery, items, total } = JSON.parse(event.body))
+    ;({ customer, delivery, items, total, giftCardQuantity } = JSON.parse(event.body))
   } catch {
     return { statusCode: 400, headers: { ...CORS, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Invalid request body' }) }
   }
+
+  giftCardQuantity = Math.max(0, Math.min(99, parseInt(giftCardQuantity) || 0))
 
   const validationError = validateOrder({ customer, delivery, items, total })
   if (validationError) {
@@ -238,6 +240,15 @@ exports.handler = async (event) => {
     return acc
   }, [])
 
+  // Gift card line item
+  if (giftCardQuantity > 0) {
+    lineItems.push({
+      title:    'Posa Rosa Gift Card',
+      price:    '5.00',
+      quantity: giftCardQuantity,
+    })
+  }
+
   // Build order note
   // Mix Box breakdown for note
   const mixBoxItems = (items || []).filter(i => i.customItem === 'mix-box')
@@ -252,6 +263,7 @@ exports.handler = async (event) => {
     `⚠ FULFILLMENT: DELIVERY — ${emirate} · ${delivery.area}`,
     `DELIVERY TIMING: ${deliveryTiming} (${emirate})`,
     `DELIVERY FEE: AED ${deliveryFee}`,
+    giftCardQuantity > 0 ? `GIFT CARD: ×${giftCardQuantity} — AED ${giftCardQuantity * 5}` : null,
     `DATE: ${delivery.date}`,
     `TIME: ${delivery.timeSlot}`,
     `ADDRESS: ${delivery.address}`,
@@ -334,6 +346,8 @@ exports.handler = async (event) => {
         })),
         deliveryFee,
         subtotal,
+        giftCardQuantity,
+        giftCardTotal: giftCardQuantity * 5,
         total,
         createdAt: new Date().toISOString(),
       })

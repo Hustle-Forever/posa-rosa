@@ -8,6 +8,7 @@ export function CartProvider({ children }) {
     catch { return [] }
   })
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [giftCardQty, setGiftCardQty] = useState(0)
 
   useEffect(() => {
     localStorage.setItem('posa-rosa-cart', JSON.stringify(items))
@@ -34,18 +35,23 @@ export function CartProvider({ children }) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, quantity } : i))
   }
 
-  function clearCart() { setItems([]) }
+  function clearCart() {
+    setItems([])
+    setGiftCardQty(0)
+  }
 
   const openDrawer  = () => setDrawerOpen(true)
   const closeDrawer = () => setDrawerOpen(false)
 
-  const cartCount = items.reduce((sum, i) => sum + i.quantity, 0)
-  const cartTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
+  const cartCount    = items.reduce((sum, i) => sum + i.quantity, 0)
+  const cartTotal    = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
+  const giftCardTotal = giftCardQty * 5
 
   return (
     <CartContext.Provider value={{
       items, addToCart, removeFromCart, updateQuantity, clearCart,
       cartTotal, cartCount,
+      giftCardQty, setGiftCardQty, giftCardTotal,
       drawerOpen, openDrawer, closeDrawer,
     }}>
       {children}

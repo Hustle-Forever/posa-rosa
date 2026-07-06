@@ -6,7 +6,7 @@ import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock'
 import { getFulfillment, getDeliveryFee } from '../lib/fulfillment'
 
 export default function CartDrawer() {
-  const { items, cartTotal, cartCount, removeFromCart, updateQuantity, closeDrawer, drawerOpen } = useCart()
+  const { items, cartTotal, cartCount, removeFromCart, updateQuantity, closeDrawer, drawerOpen, giftCardQty, setGiftCardQty, giftCardTotal } = useCart()
   const navigate = useNavigate()
   const [deliveryFee, setDeliveryFee] = useState(35)
 
@@ -87,7 +87,7 @@ export default function CartDrawer() {
                 {cartCount > 0 && (
                   <p style={{
                     fontFamily: 'var(--font-sans)', fontSize: '0.68rem',
-                    color: 'rgba(61,26,26,0.45)', margin: '0.1rem 0 0',
+                    color: 'rgba(61,26,26,0.65)', margin: '0.1rem 0 0',
                     letterSpacing: '0.06em',
                   }}>
                     {cartCount} item{cartCount !== 1 ? 's' : ''}
@@ -130,7 +130,7 @@ export default function CartDrawer() {
                   </p>
                   <p style={{
                     fontFamily: 'var(--font-sans)', fontSize: '0.78rem',
-                    color: 'rgba(61,26,26,0.45)', margin: '0 0 1.5rem',
+                    color: 'rgba(61,26,26,0.65)', margin: '0 0 1.5rem',
                   }}>
                     Add some butterflies to get started
                   </p>
@@ -184,7 +184,7 @@ export default function CartDrawer() {
                         </p>
                         <p style={{
                           fontFamily: 'var(--font-sans)', fontSize: '0.78rem',
-                          color: 'rgba(61,26,26,0.55)', margin: '0 0 0.6rem',
+                          color: 'rgba(61,26,26,0.70)', margin: '0 0 0.6rem',
                         }}>
                           AED {Number(item.price).toFixed(0)} each
                         </p>
@@ -250,12 +250,12 @@ export default function CartDrawer() {
                           style={{
                             background: 'none', border: 'none', cursor: 'pointer',
                             fontFamily: 'var(--font-sans)', fontSize: '0.65rem',
-                            color: 'rgba(61,26,26,0.35)', letterSpacing: '0.06em',
+                            color: 'rgba(61,26,26,0.60)', letterSpacing: '0.06em',
                             textTransform: 'uppercase', padding: 0,
                             transition: 'color 0.2s ease',
                           }}
                           onMouseEnter={e => e.currentTarget.style.color = '#c0392b'}
-                          onMouseLeave={e => e.currentTarget.style.color = 'rgba(61,26,26,0.35)'}
+                          onMouseLeave={e => e.currentTarget.style.color = 'rgba(61,26,26,0.60)'}
                         >
                           Remove
                         </button>
@@ -265,6 +265,77 @@ export default function CartDrawer() {
                 </div>
               )}
             </div>
+
+            {/* Gift Card Upsell */}
+            {items.length > 0 && (
+              <div style={{
+                borderTop: '1px solid rgba(201,160,163,0.12)',
+                padding: '0.875rem 1.5rem 0.5rem',
+                background: 'rgba(201,160,163,0.04)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                  <div style={{
+                    width: '68px', height: '43px', borderRadius: '6px',
+                    overflow: 'hidden', flexShrink: 0,
+                  }}>
+                    <img
+                      src="/assets/brand-reference/Gift-Card-front.png"
+                      alt="Gift Card"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: '0 0 0.1rem', fontFamily: 'var(--font-sans)', fontSize: '0.82rem', fontWeight: 500, color: 'var(--color-dark)' }}>
+                      Posa Rosa Gift Card
+                    </p>
+                    <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.65)' }}>
+                      AED 5 each
+                    </p>
+                  </div>
+                  {/* Stepper */}
+                  <div style={{
+                    display: 'flex', alignItems: 'stretch',
+                    border: '1px solid rgba(201,160,163,0.28)', borderRadius: '7px',
+                    overflow: 'hidden', height: '34px', flexShrink: 0,
+                  }}>
+                    <button
+                      onClick={() => setGiftCardQty(q => Math.max(0, q - 1))}
+                      aria-label="Remove gift card"
+                      style={{
+                        width: '36px', background: 'transparent', border: 'none',
+                        borderRight: '1px solid rgba(201,160,163,0.18)',
+                        cursor: 'pointer', color: 'var(--color-dark)',
+                        fontFamily: 'var(--font-serif)', fontSize: '1.1rem',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'background 0.15s ease',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(201,160,163,0.10)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >−</button>
+                    <span style={{
+                      width: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontFamily: 'var(--font-sans)', fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-dark)',
+                    }}>
+                      {giftCardQty}
+                    </span>
+                    <button
+                      onClick={() => setGiftCardQty(q => q + 1)}
+                      aria-label="Add gift card"
+                      style={{
+                        width: '36px', background: 'transparent', border: 'none',
+                        borderLeft: '1px solid rgba(201,160,163,0.18)',
+                        cursor: 'pointer', color: 'var(--color-dark)',
+                        fontFamily: 'var(--font-serif)', fontSize: '1.1rem',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'background 0.15s ease',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(201,160,163,0.10)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >+</button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Footer: totals + CTA */}
             {items.length > 0 && (
@@ -276,21 +347,31 @@ export default function CartDrawer() {
               }}>
                 {/* Subtotal row */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.5)' }}>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.68)' }}>
                     Subtotal
                   </span>
                   <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', color: 'var(--color-dark)', fontWeight: 500 }}>
                     AED {cartTotal.toFixed(0)}
                   </span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.5)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.68)' }}>
                     Delivery
                   </span>
                   <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', color: 'var(--color-dark)', fontWeight: 500 }}>
                     AED {deliveryFee}
                   </span>
                 </div>
+                {giftCardQty > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                    <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.68)' }}>
+                      Gift Card ×{giftCardQty}
+                    </span>
+                    <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', color: 'var(--color-dark)', fontWeight: 500 }}>
+                      AED {giftCardTotal}
+                    </span>
+                  </div>
+                )}
 
                 {/* Total */}
                 <div style={{
@@ -298,6 +379,7 @@ export default function CartDrawer() {
                   padding: '0.875rem 0',
                   borderTop: '1px solid rgba(201,160,163,0.15)',
                   marginBottom: '1rem',
+                  marginTop: '0.6rem',
                 }}>
                   <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', fontWeight: 600, color: 'var(--color-dark)' }}>
                     Total
@@ -306,7 +388,7 @@ export default function CartDrawer() {
                     fontFamily: 'var(--font-serif)',
                     fontSize: '1.5rem', fontWeight: 400, color: 'var(--color-dark)',
                   }}>
-                    AED {(cartTotal + deliveryFee).toFixed(0)}
+                    AED {(cartTotal + deliveryFee + giftCardTotal).toFixed(0)}
                   </span>
                 </div>
 
@@ -340,7 +422,7 @@ export default function CartDrawer() {
                     width: '100%', padding: '0.625rem',
                     background: 'transparent', border: 'none', cursor: 'pointer',
                     fontFamily: 'var(--font-sans)', fontSize: '0.7rem',
-                    color: 'rgba(61,26,26,0.45)', letterSpacing: '0.1em',
+                    color: 'rgba(61,26,26,0.65)', letterSpacing: '0.1em',
                     textTransform: 'uppercase', transition: 'color 0.2s ease',
                   }}
                   onMouseEnter={e => e.currentTarget.style.color = 'var(--color-dark)'}

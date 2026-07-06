@@ -73,7 +73,7 @@ export default function ContactPage() {
           style={{
             fontFamily: 'var(--font-sans)',
             fontSize: '0.9rem',
-            color: 'rgba(61,26,26,0.58)',
+            color: 'rgba(61,26,26,0.72)',
             lineHeight: 1.75,
             margin: '0 0 0.6rem',
           }}
@@ -85,7 +85,7 @@ export default function ContactPage() {
           style={{
             fontFamily: 'var(--font-sans)',
             fontSize: '0.72rem',
-            color: 'rgba(61,26,26,0.38)',
+            color: 'rgba(61,26,26,0.62)',
             letterSpacing: '0.06em',
             margin: '0 0 3rem',
           }}
@@ -138,7 +138,7 @@ export default function ContactPage() {
           }}
         >
           <div style={{ flex: 1, height: '1px', background: 'rgba(61,26,26,0.1)' }} />
-          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.65rem', color: 'rgba(61,26,26,0.35)', letterSpacing: '0.1em' }}>or</span>
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.65rem', color: 'rgba(61,26,26,0.60)', letterSpacing: '0.1em' }}>or</span>
           <div style={{ flex: 1, height: '1px', background: 'rgba(61,26,26,0.1)' }} />
         </motion.div>
 
@@ -220,7 +220,7 @@ export default function ContactPage() {
           style={{
             fontFamily: 'var(--font-sans)',
             fontSize: '0.72rem',
-            color: 'rgba(61,26,26,0.35)',
+            color: 'rgba(61,26,26,0.60)',
             letterSpacing: '0.08em',
             textAlign: 'center',
           }}

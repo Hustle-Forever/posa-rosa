@@ -88,6 +88,13 @@ section[id] {
   letter-spacing: -0.03em;
 }
 
+/* iOS Safari: prevent auto-zoom on input focus (requires font-size >= 16px) */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* Utility: visually-hidden for screen readers */
 .sr-only {
   position: absolute;

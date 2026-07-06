@@ -93,7 +93,7 @@ function FulfillmentSelector({ onComplete }) {
                   <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', fontWeight: 500, color: 'var(--color-dark)' }}>{em}</span>
                   <span style={{
                     fontFamily: 'var(--font-sans)', fontSize: '0.58rem', fontWeight: 600,
-                    color: em === 'Abu Dhabi' ? 'var(--color-gold)' : 'rgba(61,26,26,0.45)',
+                    color: em === 'Abu Dhabi' ? 'var(--color-gold)' : 'rgba(61,26,26,0.65)',
                     letterSpacing: '0.08em',
                   }}>
                     AED {em === 'Abu Dhabi' ? 35 : 40}
@@ -456,7 +456,7 @@ function MixBoxModal({ products, onClose }) {
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.7rem, 5vw, 2.2rem)', fontWeight: 400, color: 'var(--color-dark)', margin: '0.3rem 0 0.25rem' }}>
               Build Your Mix Box
             </h2>
-            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.5)', margin: '0 0 1.5rem', letterSpacing: '0.04em' }}>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.68)', margin: '0 0 1.5rem', letterSpacing: '0.04em' }}>
               Choose 2–5 flavors · 20 pieces total · AED {BOX_PRICE}
             </p>
 
@@ -481,7 +481,7 @@ function MixBoxModal({ products, onClose }) {
                   {totalPcs} / {BOX_SIZE} pieces
                   {isComplete && ' ✓'}
                 </span>
-                <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.68rem', color: 'rgba(61,26,26,0.45)' }}>
+                <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.68rem', color: 'rgba(61,26,26,0.65)' }}>
                   {remaining > 0 ? `${remaining} more to add` : remaining === 0 ? 'Box complete!' : 'Over limit'}
                 </span>
               </div>
@@ -577,7 +577,7 @@ function MixBoxModal({ products, onClose }) {
           {/* Footer: Add to Cart */}
           <div style={{ padding: '1.25rem 1.75rem 2rem', position: 'sticky', bottom: 0, background: '#FDF6F0', borderTop: '1px solid rgba(61,26,26,0.08)' }}>
             {!isComplete && (
-              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.66rem', color: 'rgba(61,26,26,0.45)', textAlign: 'center', marginBottom: '0.75rem', letterSpacing: '0.04em' }}>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.66rem', color: 'rgba(61,26,26,0.65)', textAlign: 'center', marginBottom: '0.75rem', letterSpacing: '0.04em' }}>
                 {flavorCount < MIN_FLAVORS
                   ? `Select at least ${MIN_FLAVORS} flavors`
                   : remaining !== 0
@@ -699,7 +699,7 @@ function ProductModal({ product, onClose }) {
               {product.unit && <span style={{ fontWeight: 400, opacity: 0.42, fontSize: '0.82rem', marginLeft: '0.3em' }}>/ {product.unit}</span>}
             </p>
             {product.description && (
-              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.88rem', color: 'rgba(61,26,26,0.62)', lineHeight: 1.75, margin: '0 0 1.5rem' }}>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.88rem', color: 'rgba(61,26,26,0.75)', lineHeight: 1.75, margin: '0 0 1.5rem' }}>
                 {product.description}
               </p>
             )}
@@ -972,7 +972,7 @@ export default function ShopPage() {
             <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 2rem 7rem', textAlign: 'center' }}>
               <p style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 300, color: 'var(--color-dark)', margin: '0 0 0.75rem', letterSpacing: '0.05em' }}>Coming Soon</p>
-              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(61,26,26,0.42)', margin: 0 }}>Something beautiful is on its way</p>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(61,26,26,0.62)', margin: 0 }}>Something beautiful is on its way</p>
             </motion.div>
           )}
         </>

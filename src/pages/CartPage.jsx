@@ -10,7 +10,7 @@ function SummaryRow({ label, value, bold }) {
       <span style={{
         fontFamily: 'var(--font-sans)',
         fontSize: bold ? '0.82rem' : '0.78rem',
-        color: bold ? 'var(--color-dark)' : 'rgba(61,26,26,0.58)',
+        color: bold ? 'var(--color-dark)' : 'rgba(61,26,26,0.72)',
         fontWeight: bold ? 600 : 400,
         letterSpacing: '0.03em',
       }}>{label}</span>
@@ -67,7 +67,7 @@ export default function CartPage() {
             <p style={{
               fontFamily: 'var(--font-sans)',
               fontSize: '0.75rem',
-              color: 'rgba(61,26,26,0.5)',
+              color: 'rgba(61,26,26,0.68)',
               letterSpacing: '0.08em',
               marginTop: '0.5rem',
             }}>
@@ -97,7 +97,7 @@ export default function CartPage() {
             <p style={{
               fontFamily: 'var(--font-sans)',
               fontSize: '0.82rem',
-              color: 'rgba(61,26,26,0.5)',
+              color: 'rgba(61,26,26,0.68)',
               marginBottom: '2.5rem',
               lineHeight: 1.7,
             }}>
@@ -174,7 +174,7 @@ export default function CartPage() {
                       <p style={{
                         fontFamily: 'var(--font-sans)',
                         fontSize: '0.73rem',
-                        color: 'rgba(61,26,26,0.48)',
+                        color: 'rgba(61,26,26,0.65)',
                         margin: 0,
                       }}>AED {item.price} / {item.unit}</p>
                     </div>
