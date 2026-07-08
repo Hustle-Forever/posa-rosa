@@ -1,14 +1,16 @@
-﻿import { useState } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useCart } from '../context/CartContext'
 import { EMIRATE_AREAS, EMIRATES, getDeliveryFee, getFulfillment, getDeliveryTiming } from '../lib/fulfillment'
 
 const TIME_SLOTS = [
-  { label: 'Morning',   hours: '9AM – 12PM' },
-  { label: 'Afternoon', hours: '12PM – 5PM' },
-  { label: 'Evening',   hours: '5PM – 8PM'  },
+  { label: 'Morning',   hours: '9AM – 12PM', endHour: 12 },
+  { label: 'Afternoon', hours: '12PM – 5PM', endHour: 17 },
+  { label: 'Evening',   hours: '5PM – 8PM',  endHour: 20 },
 ]
+
+const ALL_SLOTS_PASSED_MSG = 'No more delivery slots today — please select tomorrow'
 
 function deliveryDateMin(emirate) {
   // Compute "today" in UAE time — toISOString() is UTC and would allow
@@ -16,6 +18,28 @@ function deliveryDateMin(emirate) {
   const d = new Date()
   if (emirate !== 'Abu Dhabi') d.setDate(d.getDate() + 1)
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dubai' }).format(d)
+}
+
+// Current date ('YYYY-MM-DD') and minutes since midnight in UAE time
+// (Asia/Dubai, UTC+4). All slot-availability checks use this — never the
+// browser's local timezone, since the business operates on UAE time.
+function uaeNow() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Dubai', hourCycle: 'h23',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  }).formatToParts(new Date())
+  const get = type => parts.find(p => p.type === type)?.value || '0'
+  return {
+    date: `${get('year')}-${get('month')}-${get('day')}`,
+    minutes: parseInt(get('hour'), 10) * 60 + parseInt(get('minute'), 10),
+  }
+}
+
+// A slot is "passed" only for same-day (today in UAE) deliveries whose
+// end time is already behind the current UAE time.
+function slotHasPassed(slot, deliveryDate, now) {
+  return deliveryDate === now.date && now.minutes >= slot.endHour * 60
 }
 
 function inputStyle(hasError) {
@@ -141,6 +165,20 @@ export default function CheckoutPage() {
 
   const areaOptions = EMIRATE_AREAS[form.emirate] || EMIRATE_AREAS['Abu Dhabi']
 
+  // Re-render every minute so slot availability stays in sync with the UAE
+  // clock while the customer sits on the page (validation re-checks on submit
+  // regardless, so this is purely a UI freshness concern).
+  const [, setClockTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setClockTick(t => t + 1), 60_000)
+    return () => clearInterval(id)
+  }, [])
+
+  const isAbuDhabi     = form.emirate === 'Abu Dhabi'
+  const now            = uaeNow()
+  const isTodayUAE     = isAbuDhabi && form.date === now.date
+  const allSlotsPassed = isTodayUAE && TIME_SLOTS.every(s => now.minutes >= s.endHour * 60)
+
   function set(key, val) {
     setFormState(f => ({ ...f, [key]: val }))
     if (errors[key]) setErrors(e => ({ ...e, [key]: '' }))
@@ -155,9 +193,22 @@ export default function CheckoutPage() {
       area:      newAreas.includes(f.area) ? f.area : '',
       areaOther: '',
       date:      f.date && f.date < minDate ? '' : f.date,
+      // Time slots only exist for Abu Dhabi (same-day delivery)
+      timeSlot:  newEmirate === 'Abu Dhabi' ? f.timeSlot : '',
     }))
-    if (errors.emirate) setErrors(e => ({ ...e, emirate: '' }))
-    if (errors.area)    setErrors(e => ({ ...e, area: '' }))
+    if (errors.emirate)  setErrors(e => ({ ...e, emirate: '' }))
+    if (errors.area)     setErrors(e => ({ ...e, area: '' }))
+    if (errors.timeSlot) setErrors(e => ({ ...e, timeSlot: '' }))
+  }
+
+  function handleDateChange(newDate) {
+    const nowUAE = uaeNow()
+    setFormState(f => {
+      const slot = TIME_SLOTS.find(s => `${s.label} ${s.hours}` === f.timeSlot)
+      const passed = slot && slotHasPassed(slot, newDate, nowUAE)
+      return { ...f, date: newDate, timeSlot: passed ? '' : f.timeSlot }
+    })
+    if (errors.date) setErrors(e => ({ ...e, date: '' }))
   }
 
   const resolvedArea = form.area === 'Other' ? form.areaOther : form.area
@@ -171,8 +222,22 @@ export default function CheckoutPage() {
     if (!form.address.trim())                                  e.address  = 'Street address is required'
     if (!form.area)                                            e.area     = 'Please select your area'
     if (form.area === 'Other' && !form.areaOther.trim())       e.areaOther = 'Please describe your area'
-    if (!form.date)     e.date     = 'Please choose a delivery date'
-    if (!form.timeSlot) e.timeSlot = 'Please select a time slot'
+    if (!form.date) e.date = 'Please choose a delivery date'
+    // Time slots apply to Abu Dhabi (same-day) only; other emirates are
+    // next-day deliveries with no slot.
+    if (form.emirate === 'Abu Dhabi') {
+      const nowUAE = uaeNow()
+      if (form.date === nowUAE.date && TIME_SLOTS.every(s => nowUAE.minutes >= s.endHour * 60)) {
+        e.date = ALL_SLOTS_PASSED_MSG
+      } else if (!form.timeSlot) {
+        e.timeSlot = 'Please select a time slot'
+      } else {
+        const slot = TIME_SLOTS.find(s => `${s.label} ${s.hours}` === form.timeSlot)
+        if (slot && slotHasPassed(slot, form.date, nowUAE)) {
+          e.timeSlot = 'That time slot has passed — please pick another'
+        }
+      }
+    }
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -197,7 +262,7 @@ export default function CheckoutPage() {
             address:  form.address,
             area:     resolvedArea,
             mapsLink: form.mapsLink,
-            date: form.date, timeSlot: form.timeSlot, notes: form.notes,
+            date: form.date, timeSlot: isAbuDhabi ? form.timeSlot : '', notes: form.notes,
           },
           items: items.map(i => ({
             variantId:      i.variantId || null,
@@ -241,7 +306,7 @@ export default function CheckoutPage() {
         .co-input:focus { border-color: var(--color-dark) !important; box-shadow: 0 0 0 3px rgba(61,26,26,0.07) !important; }
         .co-input::placeholder { color: rgba(61,26,26,0.28); }
         .co-time-btn { transition: all 0.22s; }
-        .co-time-btn:hover { border-color: var(--color-dark) !important; }
+        .co-time-btn:hover:not(:disabled) { border-color: var(--color-dark) !important; }
         .co-place-btn { transition: background 0.28s ease, color 0.28s ease; }
         .co-place-btn:hover:not(:disabled) { background: var(--color-gold) !important; color: #3D2020 !important; }
         @media (max-width: 940px) {
@@ -343,32 +408,60 @@ export default function CheckoutPage() {
 
               <Field label="Delivery Date" error={errors.date}>
                 <input className="co-input" type="date" min={deliveryDateMin(form.emirate)}
-                  value={form.date} onChange={e => set('date', e.target.value)} style={inputStyle(errors.date)} />
+                  value={form.date} onChange={e => handleDateChange(e.target.value)} style={inputStyle(errors.date)} />
               </Field>
 
-              <Field label="Preferred Time" error={errors.timeSlot}>
-                <div className="co-time-slots" style={{ display: 'flex', gap: '0.75rem' }}>
-                  {TIME_SLOTS.map(slot => {
-                    const val    = `${slot.label} ${slot.hours}`
-                    const active = form.timeSlot === val
-                    return (
-                      <button key={slot.label} className="co-time-btn" type="button" onClick={() => set('timeSlot', val)}
-                        style={{
-                          flex: 1, padding: '0.75rem 0.875rem',
-                          border: `1px solid ${active ? 'var(--color-dark)' : 'rgba(61,26,26,0.18)'}`,
-                          background: active ? 'var(--color-dark)' : '#fff',
-                          color: active ? '#FDF6F0' : 'var(--color-dark)',
-                          borderRadius: '8px', cursor: 'pointer', textAlign: 'left',
-                          fontFamily: 'var(--font-sans)', transition: 'all 0.22s ease',
-                        }}
-                      >
-                        <div style={{ fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.03em' }}>{slot.label}</div>
-                        <div style={{ fontSize: '0.66rem', opacity: 0.65, marginTop: '2px' }}>{slot.hours}</div>
-                      </button>
-                    )
-                  })}
-                </div>
-              </Field>
+              {isAbuDhabi && (
+                <Field label="Preferred Time" error={errors.timeSlot}>
+                  {allSlotsPassed ? (
+                    <div style={{
+                      padding: '0.9rem 1rem',
+                      border: '1px solid rgba(192,57,43,0.35)',
+                      background: 'rgba(192,57,43,0.06)',
+                      borderRadius: '8px',
+                      fontFamily: 'var(--font-sans)', fontSize: '0.78rem',
+                      color: '#c0392b', lineHeight: 1.5,
+                    }}>
+                      {ALL_SLOTS_PASSED_MSG}
+                    </div>
+                  ) : (
+                    <div className="co-time-slots" style={{ display: 'flex', gap: '0.75rem' }}>
+                      {TIME_SLOTS.map(slot => {
+                        const val    = `${slot.label} ${slot.hours}`
+                        const passed = slotHasPassed(slot, form.date, now)
+                        const active = !passed && form.timeSlot === val
+                        return (
+                          <button key={slot.label} className="co-time-btn" type="button" disabled={passed}
+                            onClick={() => set('timeSlot', val)}
+                            style={{
+                              flex: 1, padding: '0.75rem 0.875rem',
+                              border: `1px solid ${active ? 'var(--color-dark)' : 'rgba(61,26,26,0.18)'}`,
+                              background: passed ? 'rgba(61,26,26,0.05)' : active ? 'var(--color-dark)' : '#fff',
+                              color: active ? '#FDF6F0' : 'var(--color-dark)',
+                              opacity: passed ? 0.55 : 1,
+                              borderRadius: '8px', cursor: passed ? 'not-allowed' : 'pointer', textAlign: 'left',
+                              fontFamily: 'var(--font-sans)', transition: 'all 0.22s ease',
+                            }}
+                          >
+                            <div style={{ fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.03em' }}>
+                              {slot.label}
+                              {passed && (
+                                <span style={{
+                                  marginLeft: '0.4rem', fontSize: '0.58rem', fontWeight: 500,
+                                  letterSpacing: '0.1em', textTransform: 'uppercase', color: '#c0392b',
+                                }}>
+                                  Passed
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: '0.66rem', opacity: 0.65, marginTop: '2px' }}>{slot.hours}</div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </Field>
+              )}
 
               <Field label="Delivery Notes (optional)">
                 <textarea className="co-input"

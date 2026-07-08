@@ -224,7 +224,7 @@ export default function OrderConfirmationPage() {
             {[
               { label: 'Address', value: `${delivery.address}, ${delivery.area}` },
               { label: 'Date',    value: delivery.date },
-              { label: 'Time',    value: delivery.timeSlot },
+              delivery.timeSlot ? { label: 'Time', value: delivery.timeSlot } : null,
               delivery.notes ? { label: 'Notes', value: delivery.notes } : null,
             ].filter(Boolean).map(row => (
               <div key={row.label} style={{

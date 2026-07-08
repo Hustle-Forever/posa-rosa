@@ -129,7 +129,14 @@ function validateOrder({ customer, delivery, items }) {
   if (typeof delivery !== 'object' || delivery === null) return 'Missing delivery details'
   if (delivery.fulfillmentType !== 'delivery') return 'Invalid fulfillment type'
   if (!isStr(delivery.date, 10) || !/^\d{4}-\d{2}-\d{2}$/.test(delivery.date)) return 'A valid date is required'
-  if (!isStr(delivery.timeSlot, 60, 1)) return 'A time slot is required'
+  // Time slots only apply to Abu Dhabi (same-day delivery); other emirates
+  // are next-day deliveries with no slot.
+  const slotEmirate = delivery.emirate || 'Abu Dhabi'
+  if (slotEmirate === 'Abu Dhabi') {
+    if (!isStr(delivery.timeSlot, 60, 1)) return 'A time slot is required'
+  } else if (delivery.timeSlot != null && !isStr(delivery.timeSlot, 60)) {
+    return 'Invalid time slot'
+  }
   if (!isStr(delivery.address, 300, 1)) return 'A delivery address is required'
   if (!isStr(delivery.area, 80, 1))    return 'A delivery area is required'
   if (delivery.notes    != null && !isStr(delivery.notes, 1000))   return 'Notes are too long'
@@ -279,7 +286,7 @@ exports.handler = async (event) => {
     `DELIVERY FEE: AED ${deliveryFee}`,
     giftCardQuantity > 0 ? `GIFT CARD: ×${giftCardQuantity} — AED ${giftCardQuantity * 5}` : null,
     `DATE: ${delivery.date}`,
-    `TIME: ${delivery.timeSlot}`,
+    delivery.timeSlot ? `TIME: ${delivery.timeSlot}` : `TIME: Next-day delivery (no time slot)`,
     `ADDRESS: ${delivery.address}`,
     delivery.mapsLink ? `MAPS: ${delivery.mapsLink}` : null,
     delivery.notes ? `NOTES: ${delivery.notes}` : null,
@@ -348,7 +355,7 @@ exports.handler = async (event) => {
         address:          delivery.address || '',
         area:             delivery.area || '',
         deliveryDate:     delivery.date,
-        deliveryTimeSlot: delivery.timeSlot,
+        deliveryTimeSlot: delivery.timeSlot || '',
         notes:            delivery.notes || '',
         googleMapsLink:   delivery.mapsLink || '',
         items: (items || []).map(i => ({
