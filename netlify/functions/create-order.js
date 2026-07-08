@@ -10,6 +10,8 @@ const SHOPIFY_ORDERS_URL = `https://${SHOPIFY_STORE}/admin/api/2024-01/orders.js
 // ── CORS ─────────────────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = new Set(
   [
+    'https://posarosa.ae',
+    'https://www.posarosa.ae',
     'https://famous-fox-da26ec.netlify.app',
     'https://posa-rosa.netlify.app',
     'http://localhost:5173',
