@@ -1,9 +1,22 @@
+import { useState, useEffect } from 'react'
 import Marquee from '../Marquee'
+import { getProducts } from '../../lib/shopify'
 
-const TEXT =
-  'BUTTERFLY CHOCOLATES · HANDCRAFTED · ABU DHABI · KINDER · MATCHA · RED VELVET · S\'MORES · WHITE CHOCOLATE · MILK CHOCOLATE · DARK CHOCOLATE · '
+const BRAND_SEG = 'HANDCRAFTED TRUFFLES & CHOCOLATES · CUSTOM ORDERS FOR WEDDINGS & EVENTS · ABU DHABI · '
+const FALLBACK_SEG = 'PREMIUM CHOCOLATES · HANDCRAFTED · '
 
 export default function MarqueeStrip() {
+  const [productSeg, setProductSeg] = useState(FALLBACK_SEG)
+
+  useEffect(() => {
+    getProducts()
+      .then(nodes => {
+        if (!nodes?.length) return
+        setProductSeg(nodes.map(n => n.title.toUpperCase()).join(' · ') + ' · ')
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <div
       aria-hidden="true"
@@ -16,7 +29,7 @@ export default function MarqueeStrip() {
       }}
     >
       <Marquee
-        text={TEXT}
+        text={BRAND_SEG + productSeg}
         speed={108}
         trackStyle={{ padding: '1.15rem 0' }}
         spanStyle={{

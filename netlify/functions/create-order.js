@@ -205,14 +205,19 @@ exports.handler = async (event) => {
     return { statusCode: 413, headers: { ...CORS, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Request too large' }) }
   }
 
-  let customer, delivery, items, total, giftCardQuantity
+  let customer, delivery, items, total, giftCardQuantity, rawGiftCardTo, rawGiftCardFrom, rawGiftCardMessage
   try {
-    ;({ customer, delivery, items, total, giftCardQuantity } = JSON.parse(event.body))
+    ;({ customer, delivery, items, total, giftCardQuantity,
+        giftCardTo: rawGiftCardTo, giftCardFrom: rawGiftCardFrom, giftCardMessage: rawGiftCardMessage,
+      } = JSON.parse(event.body))
   } catch {
     return { statusCode: 400, headers: { ...CORS, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Invalid request body' }) }
   }
 
   giftCardQuantity = Math.max(0, Math.min(99, parseInt(giftCardQuantity) || 0))
+  const giftCardTo      = (typeof rawGiftCardTo      === 'string' ? rawGiftCardTo.trim()      : '').slice(0, 200)
+  const giftCardFrom    = (typeof rawGiftCardFrom    === 'string' ? rawGiftCardFrom.trim()    : '').slice(0, 200)
+  const giftCardMessage = (typeof rawGiftCardMessage === 'string' ? rawGiftCardMessage.trim() : '').slice(0, 500)
 
   const validationError = validateOrder({ customer, delivery, items, total })
   if (validationError) {
@@ -287,6 +292,9 @@ exports.handler = async (event) => {
     `DELIVERY TIMING: ${deliveryTiming} (${emirate})`,
     `DELIVERY FEE: AED ${deliveryFee}`,
     giftCardQuantity > 0 ? `GIFT CARD: ×${giftCardQuantity} — AED ${giftCardQuantity * 5}` : null,
+    (giftCardQuantity > 0 && (giftCardTo || giftCardFrom || giftCardMessage))
+      ? `GIFT CARD NOTE — To: ${giftCardTo || '—'} | From: ${giftCardFrom || '—'} | Message: ${giftCardMessage || '—'}`
+      : null,
     `DATE: ${delivery.date}`,
     delivery.timeSlot ? `TIME: ${delivery.timeSlot}` : `TIME: Next-day delivery (no time slot)`,
     `ADDRESS: ${delivery.address}`,
@@ -371,6 +379,9 @@ exports.handler = async (event) => {
         subtotal,
         giftCardQuantity,
         giftCardTotal: giftCardQuantity * 5,
+        giftCardTo,
+        giftCardFrom,
+        giftCardMessage,
         total,
         createdAt: new Date().toISOString(),
       })

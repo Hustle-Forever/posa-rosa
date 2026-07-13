@@ -152,7 +152,7 @@ function initFormFromSession() {
 }
 
 export default function CheckoutPage() {
-  const { items, cartTotal, clearCart, giftCardQty, giftCardTotal } = useCart()
+  const { items, cartTotal, clearCart, giftCardQty, giftCardTotal, giftCardTo, giftCardFrom, giftCardMessage } = useCart()
   const navigate = useNavigate()
 
   const [loading,     setLoading]     = useState(false)
@@ -273,6 +273,9 @@ export default function CheckoutPage() {
             mixBoxFlavors:  i.mixBoxFlavors  || undefined,
           })),
           giftCardQuantity: giftCardQty,
+          giftCardTo:       giftCardTo  || '',
+          giftCardFrom:     giftCardFrom || '',
+          giftCardMessage:  giftCardMessage || '',
           total:            orderTotal,
           deliveryFee:      deliveryFee,
         }),

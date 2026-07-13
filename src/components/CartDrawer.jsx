@@ -1,12 +1,56 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '../context/CartContext'
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock'
 import { getFulfillment, getDeliveryFee } from '../lib/fulfillment'
 
+function GiftCardFlipCard() {
+  const [flipped, setFlipped] = useState(false)
+
+  useEffect(() => {
+    const id = setInterval(() => setFlipped(f => !f), 4200)
+    return () => clearInterval(id)
+  }, [])
+
+  return (
+    <div style={{ width: '68px', height: '43px', flexShrink: 0, perspective: '300px' }}>
+      <div style={{
+        position: 'relative', width: '100%', height: '100%',
+        transformStyle: 'preserve-3d',
+        WebkitTransformStyle: 'preserve-3d',
+        transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+        transition: 'transform 0.65s cubic-bezier(0.4, 0, 0.2, 1)',
+        willChange: 'transform',
+      }}>
+        <div style={{
+          position: 'absolute', inset: 0,
+          backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
+          borderRadius: '5px', overflow: 'hidden',
+        }}>
+          <img src="/assets/brand-reference/Gift-Card-front.png" alt="Gift Card"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        </div>
+        <div style={{
+          position: 'absolute', inset: 0,
+          backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
+          transform: 'rotateY(180deg)',
+          borderRadius: '5px', overflow: 'hidden',
+        }}>
+          <img src="/assets/brand-reference/Gift-Card-back.png" alt="" aria-hidden="true"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function CartDrawer() {
-  const { items, cartTotal, cartCount, removeFromCart, updateQuantity, closeDrawer, drawerOpen, giftCardQty, setGiftCardQty, giftCardTotal } = useCart()
+  const {
+    items, cartTotal, cartCount, removeFromCart, updateQuantity, closeDrawer, drawerOpen,
+    giftCardQty, setGiftCardQty, giftCardTotal,
+    giftCardTo, setGiftCardTo, giftCardFrom, setGiftCardFrom, giftCardMessage, setGiftCardMessage,
+  } = useCart()
   const navigate = useNavigate()
   const [deliveryFee, setDeliveryFee] = useState(35)
 
@@ -31,6 +75,22 @@ export default function CartDrawer() {
   function goToCheckout() {
     closeDrawer()
     navigate('/checkout')
+  }
+
+  const gcInputStyle = {
+    width: '100%', padding: '0.52rem 0.7rem',
+    background: 'rgba(255,255,255,0.85)',
+    border: '1px solid rgba(201,160,163,0.32)',
+    borderRadius: '7px',
+    fontFamily: 'var(--font-sans)', fontSize: '0.8rem',
+    color: 'rgba(61,26,26,0.88)',
+    outline: 'none', boxSizing: 'border-box',
+  }
+
+  const gcLabelStyle = {
+    display: 'block', fontFamily: 'var(--font-serif)', fontSize: '0.58rem',
+    letterSpacing: '0.18em', textTransform: 'uppercase', fontStyle: 'italic',
+    color: 'rgba(61,26,26,0.55)', marginBottom: '0.28rem',
   }
 
   return (
@@ -271,26 +331,20 @@ export default function CartDrawer() {
             {items.length > 0 && (
               <div style={{
                 borderTop: '1px solid rgba(201,160,163,0.12)',
-                padding: '0.875rem 1.5rem 0.5rem',
+                padding: '0.875rem 1.5rem 0.75rem',
                 background: 'rgba(201,160,163,0.04)',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-                  <div style={{
-                    width: '68px', height: '43px', borderRadius: '6px',
-                    overflow: 'hidden', flexShrink: 0,
-                  }}>
-                    <img
-                      src="/assets/brand-reference/Gift-Card-front.png"
-                      alt="Gift Card"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                    />
-                  </div>
+                  <GiftCardFlipCard />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ margin: '0 0 0.1rem', fontFamily: 'var(--font-sans)', fontSize: '0.82rem', fontWeight: 500, color: 'var(--color-dark)' }}>
                       Posa Rosa Gift Card
                     </p>
-                    <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.65)' }}>
+                    <p style={{ margin: '0 0 0.3rem', fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.65)' }}>
                       AED 5 each
+                    </p>
+                    <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: '0.68rem', fontStyle: 'italic', color: 'var(--color-dark)', lineHeight: 1.4, opacity: 0.82 }}>
+                      Add a personal touch — include a handwritten note with your gift.
                     </p>
                   </div>
                   {/* Stepper */}
@@ -335,6 +389,60 @@ export default function CartDrawer() {
                     >+</button>
                   </div>
                 </div>
+
+                {/* Gift card personalization — revealed when qty > 0 */}
+                <AnimatePresence>
+                  {giftCardQty > 0 && (
+                    <motion.div
+                      key="gc-fields"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
+                      style={{ overflow: 'hidden' }}
+                    >
+                      <div style={{ paddingTop: '0.875rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <div style={{ flex: 1 }}>
+                            <label style={gcLabelStyle}>To</label>
+                            <input
+                              type="text"
+                              placeholder="Recipient"
+                              value={giftCardTo}
+                              onChange={e => setGiftCardTo(e.target.value)}
+                              maxLength={100}
+                              style={gcInputStyle}
+                            />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <label style={gcLabelStyle}>From</label>
+                            <input
+                              type="text"
+                              placeholder="Your name"
+                              value={giftCardFrom}
+                              onChange={e => setGiftCardFrom(e.target.value)}
+                              maxLength={100}
+                              style={gcInputStyle}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label style={gcLabelStyle}>
+                            Message <span style={{ fontStyle: 'normal', opacity: 0.55 }}>(optional)</span>
+                          </label>
+                          <textarea
+                            placeholder="Write a heartfelt message..."
+                            value={giftCardMessage}
+                            onChange={e => setGiftCardMessage(e.target.value)}
+                            maxLength={300}
+                            rows={2}
+                            style={{ ...gcInputStyle, resize: 'none' }}
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             )}
 

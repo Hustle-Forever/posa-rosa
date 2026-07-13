@@ -9,6 +9,9 @@ export function CartProvider({ children }) {
   })
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [giftCardQty, setGiftCardQty] = useState(0)
+  const [giftCardTo, setGiftCardTo] = useState('')
+  const [giftCardFrom, setGiftCardFrom] = useState('')
+  const [giftCardMessage, setGiftCardMessage] = useState('')
 
   useEffect(() => {
     localStorage.setItem('posa-rosa-cart', JSON.stringify(items))
@@ -38,6 +41,9 @@ export function CartProvider({ children }) {
   function clearCart() {
     setItems([])
     setGiftCardQty(0)
+    setGiftCardTo('')
+    setGiftCardFrom('')
+    setGiftCardMessage('')
   }
 
   const openDrawer  = () => setDrawerOpen(true)
@@ -52,6 +58,9 @@ export function CartProvider({ children }) {
       items, addToCart, removeFromCart, updateQuantity, clearCart,
       cartTotal, cartCount,
       giftCardQty, setGiftCardQty, giftCardTotal,
+      giftCardTo, setGiftCardTo,
+      giftCardFrom, setGiftCardFrom,
+      giftCardMessage, setGiftCardMessage,
       drawerOpen, openDrawer, closeDrawer,
     }}>
       {children}
