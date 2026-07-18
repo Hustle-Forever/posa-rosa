@@ -37,14 +37,24 @@ export default function Footer() {
             src="/assets/logo/logo.png"
             alt="Posa Rosa"
             style={{
-              height: '56px',
+              height: '90px',
               width: 'auto',
               filter: 'brightness(0) invert(1)',
-              opacity: 0.92,
+              opacity: 0.95,
               display: 'block',
               margin: '0 auto',
             }}
           />
+          <p style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: '0.62rem',
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+            color: 'rgba(253,246,240,0.55)',
+            marginTop: '0.85rem',
+          }}>
+            Est. 2022
+          </p>
         </div>
 
         {/* Tagline */}
@@ -52,7 +62,7 @@ export default function Footer() {
           fontFamily: 'var(--font-serif)',
           fontSize: 'clamp(1.1rem, 2.5vw, 1.6rem)',
           fontStyle: 'italic',
-          color: 'rgba(253,246,240,0.55)',
+          color: 'rgba(253,246,240,0.85)',
           fontWeight: 300,
           marginBottom: 'clamp(2.5rem, 5vw, 4rem)',
           letterSpacing: '0.01em',
@@ -81,12 +91,12 @@ export default function Footer() {
                     fontSize: '0.78rem',
                     letterSpacing: '0.12em',
                     textTransform: 'uppercase',
-                    color: 'rgba(253,246,240,0.55)',
+                    color: 'rgba(253,246,240,0.80)',
                     textDecoration: 'none',
                     transition: 'color 0.3s ease',
                   }}
                   onMouseEnter={e => { e.currentTarget.style.color = 'var(--color-gold)' }}
-                  onMouseLeave={e => { e.currentTarget.style.color = 'rgba(253,246,240,0.55)' }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'rgba(253,246,240,0.80)' }}
                 >
                   {label}
                 </a>
@@ -107,7 +117,7 @@ export default function Footer() {
         <p style={{
           fontFamily: 'var(--font-sans)',
           fontSize: '0.82rem',
-          color: 'rgba(253,246,240,0.45)',
+          color: 'rgba(253,246,240,0.75)',
           letterSpacing: '0.06em',
           marginBottom: '0.6rem',
         }}>
@@ -116,7 +126,7 @@ export default function Footer() {
         <p style={{
           fontFamily: 'var(--font-sans)',
           fontSize: '0.78rem',
-          color: 'rgba(253,246,240,0.3)',
+          color: 'rgba(253,246,240,0.60)',
           letterSpacing: '0.06em',
           marginBottom: 'clamp(2.5rem, 5vw, 4rem)',
           fontStyle: 'italic',
@@ -128,10 +138,10 @@ export default function Footer() {
         <p style={{
           fontFamily: 'var(--font-sans)',
           fontSize: '0.7rem',
-          color: 'rgba(253,246,240,0.22)',
+          color: 'rgba(253,246,240,0.50)',
           letterSpacing: '0.08em',
         }}>
-          © 2025 Posa Rosa · Abu Dhabi
+          © {new Date().getFullYear()} Posa Rosa · Abu Dhabi
         </p>
       </div>
     </footer>
