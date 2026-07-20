@@ -146,11 +146,21 @@ A second product category, **The Collection**, was added to the shop alongside t
 
 **How it works**
 
-- `getProducts()` now fetches `productType` and full variant data (`priceV2`, `selectedOptions`) for all products in one call.
+- `getProducts()` fetches `productType` and full variant data (`priceV2`, `selectedOptions`, `availableForSale`) for all products in one call.
 - `normalizeProduct` sets `isApparel: true` when `productType === "Apparel"`. The shop page splits the product list client-side — no extra API calls per tab.
-- Two filter pills replace the old dynamic collection bar: **TRUFFLES** (default) and **COLLECTION**.
-- The URL param `?category=collection` opens the shop with the COLLECTION pill pre-selected. Tab switches keep the URL in sync.
 - The Mix Box builder is hidden when COLLECTION is active (it's chocolates-only).
+
+**Shop page flow (updated July 2026)**
+
+The shop uses a three-step flow: **Category → Delivery area → Products**.
+
+1. `/shop` with no URL param shows only the two category pills (TRUFFLES / COLLECTION) — no delivery bar, no products.
+2. After the customer picks a category, the delivery area selector appears (Emirate → Area), then products load.
+3. If delivery area is already saved in the session, steps 2–3 are combined (summary chip + products shown immediately).
+4. **TRUFFLES mode**: delivery bar shows area-based fee (AED 35 Abu Dhabi / AED 40 other emirates).
+5. **COLLECTION mode**: delivery bar shows the same Emirate/Area selector but always displays AED 22 flat, regardless of area.
+6. Switching pills after the first choice keeps working — bar and grid update to match.
+7. `/shop?category=collection` skips the first step and lands directly in COLLECTION mode; `?category=truffles` does the same for TRUFFLES. URL param is kept in sync as pills are switched.
 
 **Size variant handling**
 

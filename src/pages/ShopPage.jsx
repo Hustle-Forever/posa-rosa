@@ -13,7 +13,7 @@ const MAX_FLAVORS = 5
 
 // ─── FULFILLMENT SELECTOR (Delivery-only: Emirate → Area) ────────────────────
 
-function FulfillmentSelector({ onComplete }) {
+function FulfillmentSelector({ onComplete, isApparel }) {
   const [selectedEm,   setSelectedEm]   = useState('')
   const [selectedArea, setSelectedArea] = useState('')
   const [areaCustom,   setAreaCustom]   = useState('')
@@ -33,7 +33,7 @@ function FulfillmentSelector({ onComplete }) {
   }
 
   const canContinueArea = selectedArea && (selectedArea !== 'Other' || areaCustom.trim())
-  const fee = getDeliveryFee(selectedEm)
+  const fee = isApparel ? 22 : getDeliveryFee(selectedEm)
 
   return (
     <div style={{
@@ -96,7 +96,7 @@ function FulfillmentSelector({ onComplete }) {
                     color: em === 'Abu Dhabi' ? 'var(--color-gold)' : 'rgba(61,26,26,0.65)',
                     letterSpacing: '0.08em',
                   }}>
-                    AED {em === 'Abu Dhabi' ? 35 : 40}
+                    AED {isApparel ? 22 : (em === 'Abu Dhabi' ? 35 : 40)}
                   </span>
                 </button>
               ))}
@@ -213,9 +213,9 @@ function FulfillmentSelector({ onComplete }) {
 
 // ─── FULFILLMENT SUMMARY CHIP ─────────────────────────────────────────────────
 
-function FulfillmentSummary({ data, onChange }) {
+function FulfillmentSummary({ data, onChange, isApparel }) {
   if (!data) return null
-  const fee = getDeliveryFee(data.emirate)
+  const fee = isApparel ? 22 : getDeliveryFee(data.emirate)
 
   return (
     <div style={{
@@ -841,18 +841,25 @@ function ProductCard({ product, onOpen }) {
 
 export default function ShopPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [activeTab,    setActiveTab]    = useState(
-    () => searchParams.get('category') === 'collection' ? 'COLLECTION' : 'TRUFFLES'
-  )
+  const [activeTab,    setActiveTab]    = useState(() => {
+    const cat = searchParams.get('category')
+    if (cat === 'collection') return 'COLLECTION'
+    if (cat === 'truffles')   return 'TRUFFLES'
+    return null
+  })
   const [products,     setProducts]     = useState([])
   const [loading,      setLoading]      = useState(true)
   const [openProduct,  setOpenProduct]  = useState(null)
   const [showMixBox,   setShowMixBox]   = useState(false)
 
-  // Fulfillment step — only skip to products if a valid delivery session exists
+  // 'category' → 'fulfillment' → 'products'
   const [shopStep, setShopStep] = useState(() => {
-    const saved = getFulfillment()
-    return (saved?.type === 'delivery' && saved?.emirate) ? 'products' : 'fulfillment'
+    const cat = searchParams.get('category')
+    if (cat === 'collection' || cat === 'truffles') {
+      const saved = getFulfillment()
+      return (saved?.type === 'delivery' && saved?.emirate) ? 'products' : 'fulfillment'
+    }
+    return 'category'
   })
   const [fulfillmentData, setFulfillmentData] = useState(() => {
     const saved = getFulfillment()
@@ -892,17 +899,31 @@ export default function ShopPage() {
     setSearchParams(next, { replace: true })
   }
 
+  function handleCategoryPick(tab) {
+    setActiveTab(tab)
+    const next = new URLSearchParams(searchParams)
+    next.set('category', tab === 'COLLECTION' ? 'collection' : 'truffles')
+    setSearchParams(next, { replace: true })
+    const saved = getFulfillment()
+    if (saved?.type === 'delivery' && saved?.emirate) {
+      setFulfillmentData(saved)
+      setShopStep('products')
+    } else {
+      setShopStep('fulfillment')
+    }
+  }
+
   function handleTabChange(tab) {
     setActiveTab(tab)
     const next = new URLSearchParams(searchParams)
-    if (tab === 'COLLECTION') next.set('category', 'collection')
-    else next.delete('category')
+    next.set('category', tab === 'COLLECTION' ? 'collection' : 'truffles')
     setSearchParams(next, { replace: true })
   }
 
+  const isApparel       = activeTab === 'COLLECTION'
   const truffleProducts = products.filter(p => !p.isApparel)
   const apparelProducts = products.filter(p =>  p.isApparel)
-  const filtered        = activeTab === 'COLLECTION' ? apparelProducts : truffleProducts
+  const filtered        = isApparel ? apparelProducts : truffleProducts
 
   return (
     <motion.div
@@ -949,16 +970,51 @@ export default function ShopPage() {
         </div>
       </section>
 
-      {/* ── Fulfillment step ── */}
-      {shopStep === 'fulfillment' && (
-        <FulfillmentSelector onComplete={completeFulfillment} />
+      {/* ── Step 1: Category choice ── */}
+      {shopStep === 'category' && (
+        <div data-testid="category-picker" style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center',
+          padding: 'clamp(4rem, 12vw, 8rem) 1.5rem',
+        }}>
+          <p style={{
+            fontFamily: 'var(--font-sans)', fontSize: '0.62rem',
+            letterSpacing: '0.22em', textTransform: 'uppercase',
+            color: 'rgba(61,26,26,0.5)', marginBottom: '2rem',
+          }}>
+            What are you shopping for?
+          </p>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {['TRUFFLES', 'COLLECTION'].map(tab => (
+              <button key={tab} data-testid={`shop-tab-${tab.toLowerCase()}`}
+                className="shop-filter-btn"
+                onClick={() => handleCategoryPick(tab)}
+                style={{
+                  padding: '0.875rem 2.5rem', borderRadius: '100px',
+                  border: '1.5px solid var(--color-dark)',
+                  background: 'transparent', color: 'var(--color-dark)',
+                  fontFamily: 'var(--font-sans)', fontSize: '0.78rem',
+                  letterSpacing: '0.12em', textTransform: 'uppercase',
+                  cursor: 'pointer', fontWeight: 500,
+                }}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
-      {/* ── Products (after fulfillment is chosen) ── */}
+      {/* ── Step 2: Fulfillment ── */}
+      {shopStep === 'fulfillment' && (
+        <FulfillmentSelector onComplete={completeFulfillment} isApparel={isApparel} />
+      )}
+
+      {/* ── Step 3: Products ── */}
       {shopStep === 'products' && (
         <>
           {/* Fulfillment summary chip */}
-          <FulfillmentSummary data={fulfillmentData} onChange={changeFulfillment} />
+          <FulfillmentSummary data={fulfillmentData} onChange={changeFulfillment} isApparel={isApparel} />
 
           {/* Filter Bar */}
           <div className="shop-filter-bar"
