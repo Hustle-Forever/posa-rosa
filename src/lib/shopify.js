@@ -150,6 +150,71 @@ export async function getCollections() {
   return data.collections.edges.map(e => e.node)
 }
 
+export async function getProductsByCollection(handle) {
+  const data = await storefront(
+    `
+    query getCollectionProducts($handle: String!) {
+      collection(handle: $handle) {
+        products(first: 100) {
+          edges {
+            node {
+              id
+              title
+              handle
+              description
+              priceRange {
+                minVariantPrice {
+                  amount
+                  currencyCode
+                }
+              }
+              images(first: 5) {
+                edges {
+                  node {
+                    url
+                    altText
+                  }
+                }
+              }
+              collections(first: 5) {
+                edges {
+                  node {
+                    title
+                    handle
+                  }
+                }
+              }
+              options {
+                name
+                values
+              }
+              variants(first: 50) {
+                edges {
+                  node {
+                    id
+                    title
+                    priceV2 {
+                      amount
+                      currencyCode
+                    }
+                    selectedOptions {
+                      name
+                      value
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    `,
+    { handle }
+  )
+  return data.collection?.products.edges.map(e => e.node) ?? []
+}
+
 export function normalizeProduct(node) {
   return {
     id: node.id,
@@ -160,6 +225,12 @@ export function normalizeProduct(node) {
     image: node.images.edges[0]?.node.url ?? '',
     collection: node.collections.edges[0]?.node.title ?? '',
     variantId: node.variants?.edges[0]?.node.id ?? null,
+    variants: node.variants?.edges.map(e => ({
+      id: e.node.id,
+      title: e.node.title ?? '',
+      price: e.node.priceV2 ? parseFloat(e.node.priceV2.amount) : parseFloat(node.priceRange.minVariantPrice.amount),
+      options: e.node.selectedOptions ?? [],
+    })) ?? [],
   }
 }
 

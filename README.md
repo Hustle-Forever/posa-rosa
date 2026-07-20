@@ -140,6 +140,16 @@ The wholesale/custom orders feature was removed at the client's request: `src/pa
 
 QA screenshots (mobile 390px + desktop 1440px, before/after) are in `qa-screenshots/` (not for deployment).
 
+### Collection split — Shop page (July 2026)
+
+The shop page now fetches products per-collection rather than loading all products at once.
+
+- Two category pills replace the old dynamic filter bar: **TRUFFLES** and **APPAREL** (default: TRUFFLES).
+- Switching pills calls `getProductsByCollection(handle)` in `src/lib/shopify.js` with handle `"truffles"` or `"apparel"` and re-renders the grid.
+- The Mix Box promo banner only appears in the TRUFFLES tab.
+- Products with a **Size** option show a size selector in the product detail modal; the correct variant ID and price are passed to the cart. Single-variant products are unchanged.
+- The old `getProducts()` function in `shopify.js` is retained (used by MixBoxModal to list flavors) but `ShopPage` no longer calls it.
+
 ### Needs Natinael's input before going live
 
 - WhatsApp number: `+971500000000` is a placeholder in About, Contact pages → replace with real number.
