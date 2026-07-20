@@ -1,22 +1,13 @@
-import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { getProductsByCollection } from '../../lib/shopify'
+
+const APPAREL_IMAGES = [
+  '/assets/t-shert/front.jpg',
+  '/assets/t-shert/back.jpg',
+]
 
 export default function ApparelHighlight() {
-  const [images, setImages] = useState([null, null])
-
-  useEffect(() => {
-    getProductsByCollection('apparel')
-      .then(nodes => {
-        const first = nodes[0]
-        if (first) {
-          const imgs = first.images.edges.map(e => e.node.url)
-          setImages([imgs[0] ?? null, imgs[1] ?? null])
-        }
-      })
-      .catch(() => {})
-  }, [])
+  const images = APPAREL_IMAGES
 
   return (
     <section

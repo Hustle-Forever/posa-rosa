@@ -84,6 +84,7 @@ export async function getProducts() {
                 node {
                   id
                   title
+                  availableForSale
                   priceV2 {
                     amount
                     currencyCode
@@ -208,6 +209,7 @@ export async function getProductsByCollection(handle) {
                   node {
                     id
                     title
+                    availableForSale
                     priceV2 {
                       amount
                       currencyCode
@@ -245,6 +247,7 @@ export function normalizeProduct(node) {
     variants: node.variants?.edges.map(e => ({
       id: e.node.id,
       title: e.node.title ?? '',
+      availableForSale: e.node.availableForSale ?? true,
       price: e.node.priceV2 ? parseFloat(e.node.priceV2.amount) : parseFloat(node.priceRange.minVariantPrice.amount),
       options: e.node.selectedOptions ?? [],
     })) ?? [],
