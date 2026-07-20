@@ -48,4 +48,4 @@ VITE_SHOPIFY_STOREFRONT_TOKEN=<token>
 - One task at a time — no scope creep
 - Mobile first — 2-column grid on mobile
 - All text in English only
-- Never push `.env` to GitHub  dg
+- Never push `.env` to GitHub
