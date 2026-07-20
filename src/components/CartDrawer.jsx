@@ -58,12 +58,12 @@ export default function CartDrawer() {
   useEffect(() => {
     if (drawerOpen) {
       lockBodyScroll()
-      // Refresh delivery fee from sessionStorage each time drawer opens
-      const saved = getFulfillment()
-      setDeliveryFee(getDeliveryFee(saved?.emirate))
+      const saved     = getFulfillment()
+      const allApparel = items.length > 0 && items.every(i => i.isApparel)
+      setDeliveryFee(allApparel ? 22 : getDeliveryFee(saved?.emirate))
       return unlockBodyScroll
     }
-  }, [drawerOpen])
+  }, [drawerOpen, items])
 
   // Close on Escape
   useEffect(() => {

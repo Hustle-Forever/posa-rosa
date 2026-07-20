@@ -140,6 +140,34 @@ The wholesale/custom orders feature was removed at the client's request: `src/pa
 
 QA screenshots (mobile 390px + desktop 1440px, before/after) are in `qa-screenshots/` (not for deployment).
 
+### Apparel category — Shop page (July 2026)
+
+A second product category, **The Collection**, was added to the shop alongside the existing chocolate truffles.
+
+**How it works**
+
+- `getProducts()` now fetches `productType` and full variant data (`priceV2`, `selectedOptions`) for all products in one call.
+- `normalizeProduct` sets `isApparel: true` when `productType === "Apparel"`. The shop page splits the product list client-side — no extra API calls per tab.
+- Two filter pills replace the old dynamic collection bar: **TRUFFLES** (default) and **COLLECTION**.
+- The URL param `?category=collection` opens the shop with the COLLECTION pill pre-selected. Tab switches keep the URL in sync.
+- The Mix Box builder is hidden when COLLECTION is active (it's chocolates-only).
+
+**Size variant handling**
+
+- If an apparel product has a Shopify option named **Size**, the product modal shows a size-selector row (renders whatever size values are on the product's variants).
+- Selecting a size updates the displayed price (per-variant `priceV2`) and sends the correct `variantId` to the cart.
+- Single-variant products keep the original "Add to Cart" behaviour unchanged.
+
+**Delivery fee**
+
+- Apparel-only cart → flat **AED 22** for all areas.
+- Any non-apparel item in the cart → existing area-based fee (AED 35 Abu Dhabi / AED 40 other emirates).
+- Applied consistently in the cart drawer, checkout page, and the `create-order` Netlify function (server re-derives the fee from `items[].isApparel`).
+
+**Home page**
+
+- A new **`ApparelHighlight`** section appears on the home page directly after "How to Order". It fetches the first apparel product's images from the `apparel` Shopify collection and shows them front-and-back with a "Shop the Collection" CTA linking to `/shop?category=collection`.
+
 ### Needs Natinael's input before going live
 
 - WhatsApp number: `+971500000000` is a placeholder in About, Contact pages → replace with real number.

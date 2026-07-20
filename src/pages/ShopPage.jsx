@@ -615,15 +615,32 @@ function MixBoxModal({ products, onClose }) {
 // ─── PRODUCT MODAL ────────────────────────────────────────────────────────────
 
 function ProductModal({ product, onClose }) {
-  const [qty, setQty]     = useState(1)
-  const [added, setAdded] = useState(false)
-  const { addToCart, openDrawer } = useCart()
+  const hasSize = product.variants?.some(v => v.options.some(o => o.name === 'Size')) ?? false
+  const sizeOptions = hasSize
+    ? [...new Set(product.variants.flatMap(v => v.options.filter(o => o.name === 'Size').map(o => o.value)))]
+    : []
+
+  const [qty, setQty]                   = useState(1)
+  const [added, setAdded]               = useState(false)
+  const [selectedSize, setSelectedSize] = useState(() => sizeOptions[0] ?? null)
+  const { addToCart, openDrawer }       = useCart()
+
+  const activeVariant = hasSize && selectedSize
+    ? (product.variants.find(v => v.options.some(o => o.name === 'Size' && o.value === selectedSize)) ?? null)
+    : null
+
+  const displayPrice = activeVariant ? activeVariant.price : product.price
+  const canAdd       = !hasSize || activeVariant != null
 
   const handleAdd = useCallback(() => {
-    addToCart(product, qty)
+    if (!canAdd) return
+    const cartItem = hasSize && activeVariant
+      ? { ...product, variantId: activeVariant.id, price: activeVariant.price }
+      : product
+    addToCart(cartItem, qty)
     setAdded(true)
     setTimeout(() => { setAdded(false); onClose(); openDrawer() }, 600)
-  }, [addToCart, openDrawer, onClose, product, qty])
+  }, [addToCart, openDrawer, onClose, product, qty, hasSize, activeVariant, canAdd])
 
   useEffect(() => {
     const onKey = e => { if (e.key === 'Escape') onClose() }
@@ -695,13 +712,39 @@ function ProductModal({ product, onClose }) {
               {product.name}
             </h2>
             <p style={{ fontFamily: 'var(--font-sans)', fontSize: '1.05rem', fontWeight: 700, color: 'var(--color-dark)', margin: '0 0 1rem', letterSpacing: '0.02em' }}>
-              AED {Number(product.price).toFixed(0)}
+              AED {Number(displayPrice).toFixed(0)}
               {product.unit && <span style={{ fontWeight: 400, opacity: 0.42, fontSize: '0.82rem', marginLeft: '0.3em' }}>/ {product.unit}</span>}
             </p>
             {product.description && (
               <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.88rem', color: 'rgba(61,26,26,0.75)', lineHeight: 1.75, margin: '0 0 1.5rem' }}>
                 {product.description}
               </p>
+            )}
+
+            {/* Size selector */}
+            {hasSize && (
+              <div style={{ marginBottom: '1.25rem' }}>
+                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.66rem', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--color-dark)', margin: '0 0 0.6rem' }}>
+                  Size
+                </p>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {sizeOptions.map(size => (
+                    <button key={size} onClick={() => setSelectedSize(size)}
+                      style={{
+                        padding: '0.5rem 1.1rem',
+                        border: `1.5px solid ${selectedSize === size ? 'var(--color-dark)' : 'rgba(201,160,163,0.3)'}`,
+                        borderRadius: '8px',
+                        background: selectedSize === size ? 'var(--color-dark)' : 'transparent',
+                        color: selectedSize === size ? '#FDF6F0' : 'var(--color-dark)',
+                        fontFamily: 'var(--font-sans)', fontSize: '0.78rem', fontWeight: 500,
+                        cursor: 'pointer', transition: 'all 0.18s ease',
+                      }}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             <div style={{ display: 'flex', gap: '0.875rem', alignItems: 'stretch' }}>
@@ -719,13 +762,14 @@ function ProductModal({ product, onClose }) {
                 </button>
               </div>
 
-              <motion.button onClick={handleAdd} whileTap={{ scale: 0.97 }}
+              <motion.button onClick={handleAdd} whileTap={canAdd ? { scale: 0.97 } : {}}
                 animate={added ? { scale: [1, 1.02, 1] } : { scale: 1 }}
+                disabled={!canAdd}
                 style={{
                   flex: 1, height: '48px',
-                  background: added ? 'var(--color-gold)' : 'var(--color-dark)',
-                  color: added ? '#3D2020' : '#fff',
-                  border: 'none', borderRadius: '8px', cursor: 'pointer',
+                  background: added ? 'var(--color-gold)' : canAdd ? 'var(--color-dark)' : 'rgba(201,160,163,0.2)',
+                  color: added ? '#3D2020' : canAdd ? '#fff' : 'rgba(100,70,72,0.45)',
+                  border: 'none', borderRadius: '8px', cursor: canAdd ? 'pointer' : 'default',
                   fontFamily: 'var(--font-sans)', fontSize: '0.68rem',
                   letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 600,
                   transition: 'background 0.3s ease, color 0.3s ease',
@@ -797,9 +841,10 @@ function ProductCard({ product, onOpen }) {
 
 export default function ShopPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [activeFilter, setActiveFilter] = useState('All')
+  const [activeTab,    setActiveTab]    = useState(
+    () => searchParams.get('category') === 'collection' ? 'COLLECTION' : 'TRUFFLES'
+  )
   const [products,     setProducts]     = useState([])
-  const [collections,  setCollections]  = useState(['All'])
   const [loading,      setLoading]      = useState(true)
   const [openProduct,  setOpenProduct]  = useState(null)
   const [showMixBox,   setShowMixBox]   = useState(false)
@@ -819,9 +864,6 @@ export default function ShopPage() {
       .then(raw => {
         const normalized = raw.map(normalizeProduct)
         setProducts(normalized)
-        const HIDDEN = new Set(['Home page', 'home page', 'frontpage'])
-        const unique = [...new Set(normalized.map(p => p.collection).filter(c => c && !HIDDEN.has(c)))]
-        setCollections(['All', ...unique])
 
         const handle = searchParams.get('product')
         if (handle) {
@@ -850,9 +892,17 @@ export default function ShopPage() {
     setSearchParams(next, { replace: true })
   }
 
-  const filtered = activeFilter === 'All'
-    ? products
-    : products.filter(p => p.collection === activeFilter)
+  function handleTabChange(tab) {
+    setActiveTab(tab)
+    const next = new URLSearchParams(searchParams)
+    if (tab === 'COLLECTION') next.set('category', 'collection')
+    else next.delete('category')
+    setSearchParams(next, { replace: true })
+  }
+
+  const truffleProducts = products.filter(p => !p.isApparel)
+  const apparelProducts = products.filter(p =>  p.isApparel)
+  const filtered        = activeTab === 'COLLECTION' ? apparelProducts : truffleProducts
 
   return (
     <motion.div
@@ -919,10 +969,11 @@ export default function ShopPage() {
               gap: '0.5rem', padding: '0.875rem 1.5rem', flexWrap: 'nowrap', overflowX: 'auto',
             }}
           >
-            {collections.map(col => {
-              const active = activeFilter === col
+            {['TRUFFLES', 'COLLECTION'].map(tab => {
+              const active = activeTab === tab
               return (
-                <button key={col} className="shop-filter-btn" onClick={() => setActiveFilter(col)}
+                <button key={tab} data-testid={`shop-tab-${tab.toLowerCase()}`}
+                  className="shop-filter-btn" onClick={() => handleTabChange(tab)}
                   style={{
                     padding: '0.5rem 1.25rem', borderRadius: '100px',
                     border: `1px solid ${active ? 'var(--color-dark)' : 'rgba(201,160,163,0.3)'}`,
@@ -934,14 +985,14 @@ export default function ShopPage() {
                     opacity: active ? 1 : 0.68, whiteSpace: 'nowrap', flexShrink: 0,
                   }}
                 >
-                  {col}
+                  {tab}
                 </button>
               )
             })}
           </div>
 
-          {/* Mix Box — always visible once products step is shown */}
-          {!loading && (
+          {/* Mix Box — only visible in TRUFFLES tab */}
+          {!loading && activeTab === 'TRUFFLES' && (
             <div style={{ maxWidth: '1380px', margin: '0 auto', padding: '2.5rem 2rem 0', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
               <MixBoxCard onOpen={() => setShowMixBox(true)} />
             </div>
@@ -957,7 +1008,7 @@ export default function ShopPage() {
           )}
 
           {/* Product Grid */}
-          {!loading && products.length > 0 && (
+          {!loading && filtered.length > 0 && (
             <div className="shop-grid" style={{ maxWidth: '1380px', margin: '0 auto', padding: '0 2rem 7rem', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
               <AnimatePresence mode="popLayout">
                 {filtered.map(product => (
@@ -968,7 +1019,7 @@ export default function ShopPage() {
           )}
 
           {/* Empty state */}
-          {!loading && products.length === 0 && (
+          {!loading && filtered.length === 0 && (
             <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 2rem 7rem', textAlign: 'center' }}>
               <p style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 300, color: 'var(--color-dark)', margin: '0 0 0.75rem', letterSpacing: '0.05em' }}>Coming Soon</p>
@@ -985,7 +1036,7 @@ export default function ShopPage() {
 
       {/* Mix Box Modal */}
       <AnimatePresence>
-        {showMixBox && <MixBoxModal products={products} onClose={() => setShowMixBox(false)} />}
+        {showMixBox && <MixBoxModal products={truffleProducts} onClose={() => setShowMixBox(false)} />}
       </AnimatePresence>
     </motion.div>
   )

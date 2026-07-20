@@ -106,7 +106,9 @@ function isPhoneAlreadyTaken(shopifyErrorData) {
 }
 
 // ── Delivery fee (server-side) ────────────────────────────────────────────────
-function computeDeliveryFee(emirate) {
+function computeDeliveryFee(emirate, items) {
+  const allApparel = Array.isArray(items) && items.length > 0 && items.every(i => i.isApparel === true)
+  if (allApparel) return 22
   return emirate === 'Abu Dhabi' ? 35 : 40
 }
 
@@ -233,7 +235,7 @@ exports.handler = async (event) => {
   // items + delivery fee + gift cards actually add up to (mirrors the client's
   // own calculation, so any mismatch means a tampered or buggy request).
   const emirate     = delivery.emirate || 'Abu Dhabi'
-  const deliveryFee = computeDeliveryFee(emirate)
+  const deliveryFee = computeDeliveryFee(emirate, items)
   const expectedTotal =
     items.reduce((sum, i) => sum + i.price * i.quantity, 0) +
     deliveryFee +

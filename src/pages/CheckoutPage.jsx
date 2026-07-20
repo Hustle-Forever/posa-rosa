@@ -160,7 +160,8 @@ export default function CheckoutPage() {
   const [errors,      setErrors]      = useState({})
   const [form,        setFormState]   = useState(initFormFromSession)
 
-  const deliveryFee = getDeliveryFee(form.emirate)
+  const allApparel  = items.length > 0 && items.every(i => i.isApparel)
+  const deliveryFee = allApparel ? 22 : getDeliveryFee(form.emirate)
   const orderTotal  = cartTotal + deliveryFee + giftCardTotal
 
   const areaOptions = EMIRATE_AREAS[form.emirate] || EMIRATE_AREAS['Abu Dhabi']
@@ -269,6 +270,7 @@ export default function CheckoutPage() {
             quantity:       i.quantity,
             name:           i.name,
             price:          i.price,
+            isApparel:      i.isApparel || false,
             customItem:     i.customItem     || undefined,
             mixBoxFlavors:  i.mixBoxFlavors  || undefined,
           })),
