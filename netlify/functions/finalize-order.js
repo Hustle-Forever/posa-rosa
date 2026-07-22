@@ -157,7 +157,12 @@ exports.handler = async (event) => {
       return {
         statusCode: 200,
         headers: { ...CORS, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ success: true, idempotent: true, orderNumber: state.orderNumber, orderId: state.shopifyOrderId }),
+        body: JSON.stringify({
+          success: true, idempotent: true,
+          orderNumber: state.orderNumber,
+          orderId:     state.shopifyOrderId,
+          order:       state.orderSummary || null,
+        }),
       }
     }
     // If status === 'processing', another invocation is in-flight — reject
@@ -359,13 +364,40 @@ exports.handler = async (event) => {
     console.error('[finalize-order] Firestore write failed (Shopify order still created) pi=%s:', paymentIntentId, fsErr.message)
   }
 
-  // ── Mark idempotency doc as completed ─────────────────────────────────────
+  const orderSummary = {
+    customerName:    customer.name,
+    customerEmail:   customer.email,
+    items: items.map(i => ({
+      title:         i.name || (i.customItem === 'mix-box' ? 'Mix Box (20 pcs)' : 'Item'),
+      price:         i.price,
+      quantity:      i.quantity,
+      customItem:    i.customItem    || null,
+      mixBoxFlavors: i.mixBoxFlavors || null,
+    })),
+    deliveryFee,
+    subtotal,
+    giftCardQuantity,
+    giftCardTotal:   giftCardQuantity * 5,
+    giftCardTo,
+    giftCardFrom,
+    giftCardMessage,
+    total:           expectedTotal,
+    address:         delivery.address  || '',
+    area:            delivery.area     || '',
+    emirate,
+    date:            delivery.date,
+    timeSlot:        delivery.timeSlot || '',
+    notes:           delivery.notes    || '',
+  }
+
+  // ── Mark idempotency doc as completed (store orderSummary for refresh) ─────
   try {
     await setDoc(intentRef, {
       status:         'completed',
       orderNumber,
       shopifyOrderId,
       completedAt:    new Date().toISOString(),
+      orderSummary,
     }, { merge: true })
   } catch (fsErr) {
     console.error('[finalize-order] Could not mark pending_intent completed pi=%s:', paymentIntentId, fsErr.message)
@@ -374,6 +406,6 @@ exports.handler = async (event) => {
   return {
     statusCode: 200,
     headers: { ...CORS, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ success: true, orderNumber, orderId: shopifyOrderId }),
+    body: JSON.stringify({ success: true, orderNumber, orderId: shopifyOrderId, order: orderSummary }),
   }
 }

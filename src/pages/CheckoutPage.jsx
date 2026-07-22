@@ -1,8 +1,10 @@
-﻿import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useMemo, useRef, forwardRef, useImperativeHandle } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useCart } from '../context/CartContext'
-import { EMIRATE_AREAS, EMIRATES, getDeliveryFee, getFulfillment, getDeliveryTiming } from '../lib/fulfillment'
+import { EMIRATE_AREAS, EMIRATES, getDeliveryFee, getFulfillment } from '../lib/fulfillment'
+import { stripePromise } from '../lib/stripe'
 
 const TIME_SLOTS = [
   { label: 'Morning',   hours: '9AM – 12PM', endHour: 12 },
@@ -12,17 +14,25 @@ const TIME_SLOTS = [
 
 const ALL_SLOTS_PASSED_MSG = 'No more delivery slots today — please select tomorrow'
 
+const STRIPE_APPEARANCE = {
+  theme: 'stripe',
+  variables: {
+    colorPrimary:    '#3D1A1A',
+    colorBackground: '#ffffff',
+    colorText:       '#3D1A1A',
+    colorDanger:     '#c0392b',
+    fontFamily:      'system-ui, sans-serif',
+    spacingUnit:     '4px',
+    borderRadius:    '8px',
+  },
+}
+
 function deliveryDateMin(emirate) {
-  // Compute "today" in UAE time — toISOString() is UTC and would allow
-  // yesterday's date between midnight and 4 AM UAE (UTC+4).
   const d = new Date()
   if (emirate !== 'Abu Dhabi') d.setDate(d.getDate() + 1)
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dubai' }).format(d)
 }
 
-// Current date ('YYYY-MM-DD') and minutes since midnight in UAE time
-// (Asia/Dubai, UTC+4). All slot-availability checks use this — never the
-// browser's local timezone, since the business operates on UAE time.
 function uaeNow() {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Dubai', hourCycle: 'h23',
@@ -31,29 +41,23 @@ function uaeNow() {
   }).formatToParts(new Date())
   const get = type => parts.find(p => p.type === type)?.value || '0'
   return {
-    date: `${get('year')}-${get('month')}-${get('day')}`,
+    date:    `${get('year')}-${get('month')}-${get('day')}`,
     minutes: parseInt(get('hour'), 10) * 60 + parseInt(get('minute'), 10),
   }
 }
 
-// A slot is "passed" only for same-day (today in UAE) deliveries whose
-// end time is already behind the current UAE time.
 function slotHasPassed(slot, deliveryDate, now) {
   return deliveryDate === now.date && now.minutes >= slot.endHour * 60
 }
 
 function inputStyle(hasError) {
   return {
-    width: '100%',
-    padding: '0.82rem 1rem',
+    width: '100%', padding: '0.82rem 1rem',
     background: '#fff',
     border: `1px solid ${hasError ? '#c0392b' : 'rgba(61,26,26,0.18)'}`,
     borderRadius: '8px',
-    fontFamily: 'var(--font-sans)',
-    fontSize: '0.86rem',
-    color: 'var(--color-dark)',
-    boxSizing: 'border-box',
-    outline: 'none',
+    fontFamily: 'var(--font-sans)', fontSize: '0.86rem', color: 'var(--color-dark)',
+    boxSizing: 'border-box', outline: 'none',
     transition: 'border-color 0.22s ease, box-shadow 0.22s ease',
   }
 }
@@ -121,25 +125,46 @@ function Field({ label, error, children }) {
   )
 }
 
-function Spinner() {
+function Spinner({ light }) {
   return (
     <span style={{
       display: 'inline-block', width: '16px', height: '16px',
       borderRadius: '50%',
-      border: '2px solid rgba(201,169,110,0.3)',
-      borderTopColor: 'var(--color-gold)',
+      border: light ? '2px solid rgba(255,255,255,0.3)' : '2px solid rgba(201,169,110,0.3)',
+      borderTopColor: light ? '#fff' : 'var(--color-gold)',
       animation: 'co-spin 0.75s linear infinite',
       verticalAlign: 'middle',
       marginRight: '0.5rem',
+      flexShrink: 0,
     }} />
   )
 }
 
+// ── Stripe inner component — must be inside <Elements> to use hooks ────────────
+const StripePaymentField = forwardRef(function StripePaymentField({ onError }, ref) {
+  const stripe   = useStripe()
+  const elements = useElements()
+
+  useImperativeHandle(ref, () => ({
+    async confirmPayment(returnUrl) {
+      if (!stripe || !elements) { onError('Payment not ready — please try again'); return }
+      const { error } = await stripe.confirmPayment({
+        elements,
+        confirmParams: { return_url: returnUrl },
+      })
+      // Reaches here only when Stripe did NOT redirect (i.e., an error occurred)
+      if (error) onError(error.message)
+    },
+  }), [stripe, elements, onError])
+
+  return <PaymentElement options={{ layout: 'tabs' }} />
+})
+
 function initFormFromSession() {
-  const saved = getFulfillment()
-  const emirate = (saved?.type === 'delivery' && saved?.emirate) ? saved.emirate : 'Abu Dhabi'
+  const saved    = getFulfillment()
+  const emirate  = (saved?.type === 'delivery' && saved?.emirate) ? saved.emirate : 'Abu Dhabi'
   const areaList = EMIRATE_AREAS[emirate] || EMIRATE_AREAS['Abu Dhabi']
-  const rawArea = saved?.area || ''
+  const rawArea  = saved?.area || ''
   const isCustomArea = rawArea && !areaList.includes(rawArea)
   return {
     name: '', phone: '', email: '',
@@ -152,23 +177,27 @@ function initFormFromSession() {
 }
 
 export default function CheckoutPage() {
-  const { items, cartTotal, clearCart, giftCardQty, giftCardTotal, giftCardTo, giftCardFrom, giftCardMessage } = useCart()
-  const navigate = useNavigate()
+  const {
+    items, cartTotal,
+    giftCardQty, giftCardTotal, giftCardTo, giftCardFrom, giftCardMessage,
+  } = useCart()
 
-  const [loading,     setLoading]     = useState(false)
-  const [serverError, setServerError] = useState(null)
-  const [errors,      setErrors]      = useState({})
-  const [form,        setFormState]   = useState(initFormFromSession)
+  const [searchParams]                          = useSearchParams()
+  const [loading,       setLoading]             = useState(false)
+  const [serverError,   setServerError]         = useState(null)
+  const [errors,        setErrors]              = useState({})
+  const [form,          setFormState]           = useState(initFormFromSession)
+  const [clientSecret,  setClientSecret]        = useState(null)
+  const [creatingIntent, setCreatingIntent]     = useState(false)
+  const [paymentError,  setPaymentError]        = useState(null)
+  const paymentFieldRef = useRef(null)
 
   const allApparel  = items.length > 0 && items.every(i => i.isApparel)
   const deliveryFee = allApparel ? 22 : getDeliveryFee(form.emirate)
   const orderTotal  = cartTotal + deliveryFee + giftCardTotal
-
   const areaOptions = EMIRATE_AREAS[form.emirate] || EMIRATE_AREAS['Abu Dhabi']
 
-  // Re-render every minute so slot availability stays in sync with the UAE
-  // clock while the customer sits on the page (validation re-checks on submit
-  // regardless, so this is purely a UI freshness concern).
+  // Re-render every minute to keep time-slot availability fresh
   const [, setClockTick] = useState(0)
   useEffect(() => {
     const id = setInterval(() => setClockTick(t => t + 1), 60_000)
@@ -180,6 +209,76 @@ export default function CheckoutPage() {
   const isTodayUAE     = isAbuDhabi && form.date === now.date
   const allSlotsPassed = isTodayUAE && TIME_SLOTS.every(s => now.minutes >= s.endHour * 60)
 
+  // Restore saved form on retry redirect
+  useEffect(() => {
+    if (searchParams.get('retry') !== '1') return
+    try {
+      const saved = sessionStorage.getItem('posa-rosa-pending-order')
+      if (!saved) return
+      const { form: savedForm } = JSON.parse(saved)
+      if (savedForm) setFormState(prev => ({ ...prev, ...savedForm }))
+    } catch {}
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Gate: all required fields filled (no visible errors — just readiness check)
+  const formValid = useMemo(() => {
+    if (!form.name.trim() || !form.phone.trim() || !form.email.trim()) return false
+    if (!form.emirate || !form.address.trim() || !form.area) return false
+    if (form.area === 'Other' && !form.areaOther.trim()) return false
+    if (!form.date) return false
+    if (form.emirate === 'Abu Dhabi' && !form.timeSlot) return false
+    return true
+  }, [form])
+
+  // Auto-create PaymentIntent when form becomes valid; re-create on total change
+  useEffect(() => {
+    if (!formValid) {
+      setClientSecret(null)
+      setPaymentError(null)
+      setCreatingIntent(false)
+      return
+    }
+
+    let cancelled = false
+    setClientSecret(null)
+    setCreatingIntent(true)
+    setPaymentError(null)
+
+    fetch('/api/create-payment-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: items.map(i => ({
+          variantId:  i.variantId  || null,
+          price:      i.price,
+          quantity:   i.quantity,
+          isApparel:  i.isApparel  || false,
+          customItem: i.customItem || undefined,
+        })),
+        emirate:          form.emirate,
+        claimedTotal:     orderTotal,
+        giftCardQuantity: giftCardQty,
+      }),
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (cancelled) return
+        if (d.error) {
+          setPaymentError(
+            d.error.includes('Price mismatch')
+              ? 'Your cart total changed. Please review and try again.'
+              : d.error
+          )
+        } else {
+          setClientSecret(d.clientSecret)
+        }
+      })
+      .catch(() => { if (!cancelled) setPaymentError('Payment setup failed — please try again') })
+      .finally(() => { if (!cancelled) setCreatingIntent(false) })
+
+    return () => { cancelled = true }
+  }, [formValid, orderTotal]) // eslint-disable-line react-hooks/exhaustive-deps
+
   function set(key, val) {
     setFormState(f => ({ ...f, [key]: val }))
     if (errors[key]) setErrors(e => ({ ...e, [key]: '' }))
@@ -190,11 +289,10 @@ export default function CheckoutPage() {
     const minDate  = deliveryDateMin(newEmirate)
     setFormState(f => ({
       ...f,
-      emirate: newEmirate,
+      emirate:   newEmirate,
       area:      newAreas.includes(f.area) ? f.area : '',
       areaOther: '',
       date:      f.date && f.date < minDate ? '' : f.date,
-      // Time slots only exist for Abu Dhabi (same-day delivery)
       timeSlot:  newEmirate === 'Abu Dhabi' ? f.timeSlot : '',
     }))
     if (errors.emirate)  setErrors(e => ({ ...e, emirate: '' }))
@@ -205,7 +303,7 @@ export default function CheckoutPage() {
   function handleDateChange(newDate) {
     const nowUAE = uaeNow()
     setFormState(f => {
-      const slot = TIME_SLOTS.find(s => `${s.label} ${s.hours}` === f.timeSlot)
+      const slot   = TIME_SLOTS.find(s => `${s.label} ${s.hours}` === f.timeSlot)
       const passed = slot && slotHasPassed(slot, newDate, nowUAE)
       return { ...f, date: newDate, timeSlot: passed ? '' : f.timeSlot }
     })
@@ -219,13 +317,11 @@ export default function CheckoutPage() {
     if (!form.name.trim())  e.name  = 'Your name is required'
     if (!form.phone.trim()) e.phone = 'Phone number is required'
     if (!form.email.trim()) e.email = 'Email address is required'
-    if (!form.emirate)                                         e.emirate  = 'Please select an emirate'
-    if (!form.address.trim())                                  e.address  = 'Street address is required'
-    if (!form.area)                                            e.area     = 'Please select your area'
+    if (!form.emirate)                                         e.emirate   = 'Please select an emirate'
+    if (!form.address.trim())                                  e.address   = 'Street address is required'
+    if (!form.area)                                            e.area      = 'Please select your area'
     if (form.area === 'Other' && !form.areaOther.trim())       e.areaOther = 'Please describe your area'
     if (!form.date) e.date = 'Please choose a delivery date'
-    // Time slots apply to Abu Dhabi (same-day) only; other emirates are
-    // next-day deliveries with no slot.
     if (form.emirate === 'Abu Dhabi') {
       const nowUAE = uaeNow()
       if (form.date === nowUAE.date && TIME_SLOTS.every(s => nowUAE.minutes >= s.endHour * 60)) {
@@ -249,55 +345,41 @@ export default function CheckoutPage() {
       return
     }
     if (!validate()) return
-    setLoading(true)
-    setServerError(null)
-    try {
-      const res = await fetch('/api/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customer: { name: form.name, phone: form.phone, email: form.email },
-          delivery: {
-            fulfillmentType: 'delivery',
-            emirate:  form.emirate,
-            address:  form.address,
-            area:     resolvedArea,
-            mapsLink: form.mapsLink,
-            date: form.date, timeSlot: isAbuDhabi ? form.timeSlot : '', notes: form.notes,
-          },
-          items: items.map(i => ({
-            variantId:      i.variantId || null,
-            quantity:       i.quantity,
-            name:           i.name,
-            price:          i.price,
-            isApparel:      i.isApparel || false,
-            customItem:     i.customItem     || undefined,
-            mixBoxFlavors:  i.mixBoxFlavors  || undefined,
-          })),
-          giftCardQuantity: giftCardQty,
-          giftCardTo:       giftCardTo  || '',
-          giftCardFrom:     giftCardFrom || '',
-          giftCardMessage:  giftCardMessage || '',
-          total:            orderTotal,
-          deliveryFee:      deliveryFee,
-        }),
-      })
-      const data = await res.json()
-      if (!data.success) throw new Error(data.error || 'Order failed')
-      clearCart()
-      navigate(`/order-confirmation?id=${data.orderNumber}`, {
-        state: {
-          orderNumber: data.orderNumber, items: [...items],
-          giftCardQty, giftCardTotal,
-          delivery: { ...form, fulfillmentType: 'delivery', area: resolvedArea },
-        },
-      })
-    } catch (err) {
-      console.error('Checkout error:', err)
-      setServerError('Something went wrong. Please try again or contact us on WhatsApp.')
-      setLoading(false)
+    if (!clientSecret || !paymentFieldRef.current) {
+      setPaymentError(
+        creatingIntent
+          ? 'Setting up payment — please wait a moment'
+          : 'Payment not ready — please refresh and try again'
+      )
+      return
     }
+
+    setLoading(true)
+    setPaymentError(null)
+    setServerError(null)
+
+    // Persist order data — survives the Stripe redirect in the same browser tab
+    try {
+      sessionStorage.setItem('posa-rosa-pending-order', JSON.stringify({
+        form,
+        items:           items.map(i => ({ ...i })),
+        giftCardQty,
+        giftCardTotal,
+        giftCardTo:      giftCardTo      || '',
+        giftCardFrom:    giftCardFrom    || '',
+        giftCardMessage: giftCardMessage || '',
+        orderTotal,
+        deliveryFee,
+      }))
+    } catch {}
+
+    await paymentFieldRef.current.confirmPayment(`${window.location.origin}/order-confirmation`)
+    // Reaches here only if Stripe returned an error (no redirect occurred)
+    setLoading(false)
   }
+
+  const btnReady    = clientSecret && !creatingIntent && !loading
+  const btnDisabled = loading || (formValid && !clientSecret)
 
   return (
     <motion.div
@@ -369,7 +451,6 @@ export default function CheckoutPage() {
 
             {/* 02 Delivery Details */}
             <FormSection number="02" title="Delivery Details">
-              {/* Emirate */}
               <Field label="Emirate" error={errors.emirate}>
                 <select className="co-input" value={form.emirate} onChange={e => handleEmirateChange(e.target.value)}
                   style={selectStyle(errors.emirate)}>
@@ -421,10 +502,8 @@ export default function CheckoutPage() {
                   {allSlotsPassed ? (
                     <div style={{
                       padding: '0.9rem 1rem',
-                      border: '1px solid rgba(192,57,43,0.35)',
-                      background: 'rgba(192,57,43,0.06)',
-                      borderRadius: '8px',
-                      fontFamily: 'var(--font-sans)', fontSize: '0.78rem',
+                      border: '1px solid rgba(192,57,43,0.35)', background: 'rgba(192,57,43,0.06)',
+                      borderRadius: '8px', fontFamily: 'var(--font-sans)', fontSize: '0.78rem',
                       color: '#c0392b', lineHeight: 1.5,
                     }}>
                       {ALL_SLOTS_PASSED_MSG}
@@ -451,10 +530,8 @@ export default function CheckoutPage() {
                             <div style={{ fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.03em' }}>
                               {slot.label}
                               {passed && (
-                                <span style={{
-                                  marginLeft: '0.4rem', fontSize: '0.58rem', fontWeight: 500,
-                                  letterSpacing: '0.1em', textTransform: 'uppercase', color: '#c0392b',
-                                }}>
+                                <span style={{ marginLeft: '0.4rem', fontSize: '0.58rem', fontWeight: 500,
+                                  letterSpacing: '0.1em', textTransform: 'uppercase', color: '#c0392b' }}>
                                   Passed
                                 </span>
                               )}
@@ -482,42 +559,40 @@ export default function CheckoutPage() {
             </FormSection>
 
             {/* 03 Payment */}
-            <FormSection number="03" title="Payment Method">
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '1rem',
-                padding: '1.1rem 1.25rem',
-                border: '2px solid var(--color-gold)', borderRadius: '10px',
-                background: 'rgba(201,169,110,0.06)',
-              }}>
+            <FormSection number="03" title="Payment">
+              {!formValid ? (
                 <div style={{
-                  width: '20px', height: '20px', borderRadius: '50%',
-                  background: 'var(--color-gold)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  padding: '1.75rem 1.5rem', textAlign: 'center',
+                  border: '1px solid rgba(61,26,26,0.1)', borderRadius: '10px',
+                  background: 'rgba(61,26,26,0.02)',
                 }}>
-                  <svg viewBox="0 0 12 10" fill="none" width="10" height="8">
-                    <path d="M1 5l3 3 7-7" stroke="#3D1A1A" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <div>
-                  <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.86rem', fontWeight: 600, color: 'var(--color-dark)' }}>
-                    Cash on Delivery
-                  </p>
-                  <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.68)' }}>
-                    Pay when your order arrives
+                  <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.4)', lineHeight: 1.6 }}>
+                    Complete your details above to unlock payment
                   </p>
                 </div>
-              </div>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '1rem',
-                padding: '1.1rem 1.25rem', border: '1px solid rgba(61,26,26,0.1)',
-                borderRadius: '10px', opacity: 0.4, cursor: 'not-allowed',
-              }}>
-                <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '1.5px solid rgba(61,26,26,0.28)', flexShrink: 0 }} />
-                <div>
-                  <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.86rem', fontWeight: 600, color: 'var(--color-dark)' }}>Online Payment</p>
-                  <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: 'rgba(61,26,26,0.65)' }}>Coming soon</p>
+              ) : (creatingIntent || !clientSecret) && !paymentError ? (
+                <div style={{
+                  padding: '1.75rem 1.5rem',
+                  border: '1px solid rgba(61,26,26,0.1)', borderRadius: '10px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
+                }}>
+                  <Spinner />
+                  <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.55)' }}>
+                    Setting up secure payment…
+                  </p>
                 </div>
-              </div>
+              ) : clientSecret ? (
+                <Elements stripe={stripePromise} options={{ clientSecret, appearance: STRIPE_APPEARANCE }}>
+                  <StripePaymentField ref={paymentFieldRef} onError={setPaymentError} />
+                </Elements>
+              ) : null}
+
+              {paymentError && (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  style={{ margin: '0.75rem 0 0', fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#c0392b', lineHeight: 1.5 }}>
+                  {paymentError}
+                </motion.p>
+              )}
             </FormSection>
           </div>
 
@@ -527,6 +602,7 @@ export default function CheckoutPage() {
               items={items} cartTotal={cartTotal} orderTotal={orderTotal}
               deliveryFee={deliveryFee} giftCardQty={giftCardQty} giftCardTotal={giftCardTotal}
               loading={loading} serverError={serverError} errors={errors}
+              paymentError={paymentError} btnReady={btnReady} creatingIntent={creatingIntent}
               onPlace={handlePlaceOrder}
             />
           </div>
@@ -544,22 +620,28 @@ export default function CheckoutPage() {
               AED {orderTotal}
             </p>
           </div>
-          <motion.button className="co-place-btn" onClick={handlePlaceOrder} whileTap={{ scale: 0.97 }} disabled={loading}
+          <motion.button className="co-place-btn" onClick={handlePlaceOrder} whileTap={{ scale: 0.97 }}
+            disabled={btnDisabled}
             style={{
               padding: '0.875rem 1.75rem',
               background: 'var(--color-dark)', color: '#fff',
               border: 'none', borderRadius: '8px',
               fontFamily: 'var(--font-sans)', fontSize: '0.7rem',
               letterSpacing: '0.14em', textTransform: 'uppercase',
-              cursor: loading ? 'wait' : 'pointer', fontWeight: 600,
-              opacity: loading ? 0.72 : 1,
+              cursor: btnDisabled ? 'wait' : 'pointer', fontWeight: 600,
+              opacity: btnDisabled ? 0.72 : 1,
               display: 'flex', alignItems: 'center',
             }}
           >
-            {loading && <Spinner />}
-            {loading ? 'Processing…' : 'Place Order'}
+            {(loading || (formValid && creatingIntent)) && <Spinner light />}
+            {loading ? 'Processing…' : (formValid && creatingIntent) ? 'Setting up…' : 'Place Order'}
           </motion.button>
         </div>
+        {paymentError && (
+          <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#c0392b', textAlign: 'center' }}>
+            {paymentError}
+          </p>
+        )}
         {serverError && (
           <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#c0392b', textAlign: 'center' }}>
             {serverError}
@@ -575,7 +657,15 @@ export default function CheckoutPage() {
   )
 }
 
-function OrderSummaryCard({ items, cartTotal, orderTotal, deliveryFee, giftCardQty = 0, giftCardTotal = 0, loading, serverError, errors, onPlace }) {
+function OrderSummaryCard({
+  items, cartTotal, orderTotal, deliveryFee, giftCardQty = 0, giftCardTotal = 0,
+  loading, serverError, errors, paymentError, btnReady, creatingIntent, onPlace,
+}) {
+  const btnDisabled = loading || (!btnReady && !creatingIntent)
+  const btnLabel    = loading ? 'Processing your order…'
+    : creatingIntent           ? 'Setting up payment…'
+    : 'Place Order'
+
   return (
     <div style={{ background: '#fff', borderRadius: '14px', padding: '2rem', boxShadow: '0 4px 32px rgba(61,26,26,0.07)' }}>
       <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.5rem', fontWeight: 400, color: 'var(--color-dark)', margin: '0 0 1.5rem' }}>
@@ -643,28 +733,28 @@ function OrderSummaryCard({ items, cartTotal, orderTotal, deliveryFee, giftCardQ
         </div>
       </div>
 
-      <motion.button className="co-place-btn" onClick={onPlace} whileTap={{ scale: 0.98 }} disabled={loading}
+      <motion.button className="co-place-btn" onClick={onPlace} whileTap={{ scale: 0.98 }} disabled={btnDisabled}
         style={{
           width: '100%', padding: '1rem',
           background: 'var(--color-dark)', color: '#fff',
           border: 'none', borderRadius: '8px',
           fontFamily: 'var(--font-sans)', fontSize: '0.75rem',
           letterSpacing: '0.14em', textTransform: 'uppercase',
-          cursor: loading ? 'wait' : 'pointer', fontWeight: 600,
-          opacity: loading ? 0.72 : 1,
+          cursor: btnDisabled ? 'wait' : 'pointer', fontWeight: 600,
+          opacity: btnDisabled ? 0.72 : 1,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}
       >
-        {loading && (
-          <span style={{
-            display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%',
-            border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff',
-            animation: 'co-spin 0.75s linear infinite', marginRight: '0.5rem',
-          }} />
-        )}
-        {loading ? 'Processing your order…' : 'Place Order'}
+        {(loading || creatingIntent) && <Spinner light />}
+        {btnLabel}
       </motion.button>
 
+      {paymentError && (
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          style={{ marginTop: '0.75rem', fontFamily: 'var(--font-sans)', fontSize: '0.7rem', color: '#c0392b', textAlign: 'center', lineHeight: 1.5 }}>
+          {paymentError}
+        </motion.p>
+      )}
       {Object.keys(errors).length > 0 && (
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           style={{ marginTop: '0.75rem', fontFamily: 'var(--font-sans)', fontSize: '0.7rem', color: '#c0392b', textAlign: 'center', lineHeight: 1.5 }}>
