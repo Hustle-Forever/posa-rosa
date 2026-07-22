@@ -467,13 +467,15 @@ export default function CheckoutPage() {
                 </select>
                 {form.emirate && (
                   <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{
+                    <span data-testid="checkout-delivery-badge" style={{
                       fontFamily: 'var(--font-sans)', fontSize: '0.62rem', letterSpacing: '0.06em',
                       padding: '0.18rem 0.6rem', borderRadius: '100px', fontWeight: 600,
-                      background: form.emirate === 'Abu Dhabi' ? 'rgba(201,169,110,0.15)' : 'rgba(201,160,163,0.2)',
-                      color: form.emirate === 'Abu Dhabi' ? 'var(--color-gold)' : 'var(--color-dark)',
+                      background: allApparel || form.emirate === 'Abu Dhabi' ? 'rgba(201,169,110,0.15)' : 'rgba(201,160,163,0.2)',
+                      color: allApparel || form.emirate === 'Abu Dhabi' ? 'var(--color-gold)' : 'var(--color-dark)',
                     }}>
-                      {form.emirate === 'Abu Dhabi' ? 'Same-day delivery available' : 'Next-day delivery'}
+                      {allApparel
+                        ? '48–72 hour delivery · AED 22'
+                        : (form.emirate === 'Abu Dhabi' ? 'Same-day delivery available' : 'Next-day delivery')}
                     </span>
                   </div>
                 )}

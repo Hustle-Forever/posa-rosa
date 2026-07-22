@@ -78,3 +78,24 @@ test.describe('FIX 2 — Abu Dhabi cutoffs', () => {
     await expect(page.getByTestId('slot-Evening')).toBeEnabled()
   })
 })
+
+const APPAREL_CART = [{
+  id: 'a1', name: 'Butterfly Tee', price: 120, quantity: 1,
+  isApparel: true, variantId: 'gid://shopify/ProductVariant/2',
+}]
+
+test.describe('FIX 3 — apparel checkout', () => {
+  test('apparel-only checkout → 48–72h badge, no date/time', async ({ page }) => {
+    await seed(page, {
+      cart: APPAREL_CART,
+      fulfillment: { type: 'delivery', emirate: 'Abu Dhabi', area: 'Al Mushrif' },
+    })
+    await page.goto('/checkout')
+
+    await expect(page.getByTestId('checkout-delivery-badge')).toContainText('48–72 hour delivery · AED 22')
+    await expect(page.getByText('Same-day delivery available')).toHaveCount(0)
+    await expect(page.locator('[data-field="date"]')).toHaveCount(0)
+    await expect(page.locator('[data-field="timeSlot"]')).toHaveCount(0)
+    await expect(page.getByText('Delivery: 48–72 hours')).toBeVisible()
+  })
+})
