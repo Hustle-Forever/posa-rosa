@@ -12,7 +12,6 @@ const ALLOWED_ORIGINS = new Set(
   [
     'https://posarosa.ae',
     'https://www.posarosa.ae',
-    'https://famous-fox-da26ec.netlify.app',
     'https://posa-rosa.netlify.app',
     'http://localhost:5173',
     'http://localhost:8888',
@@ -132,15 +131,6 @@ function validateOrder({ customer, delivery, items }) {
 
   if (typeof delivery !== 'object' || delivery === null) return 'Missing delivery details'
   if (delivery.fulfillmentType !== 'delivery') return 'Invalid fulfillment type'
-  if (!isStr(delivery.date, 10) || !/^\d{4}-\d{2}-\d{2}$/.test(delivery.date)) return 'A valid date is required'
-  // Time slots only apply to Abu Dhabi (same-day delivery); other emirates
-  // are next-day deliveries with no slot.
-  const slotEmirate = delivery.emirate || 'Abu Dhabi'
-  if (slotEmirate === 'Abu Dhabi') {
-    if (!isStr(delivery.timeSlot, 60, 1)) return 'A time slot is required'
-  } else if (delivery.timeSlot != null && !isStr(delivery.timeSlot, 60)) {
-    return 'Invalid time slot'
-  }
   if (!isStr(delivery.address, 300, 1)) return 'A delivery address is required'
   if (!isStr(delivery.area, 80, 1))    return 'A delivery area is required'
   if (delivery.notes    != null && !isStr(delivery.notes, 1000))   return 'Notes are too long'
@@ -149,6 +139,15 @@ function validateOrder({ customer, delivery, items }) {
 
   if (!Array.isArray(items) || items.length === 0 || items.length > MAX_ITEMS) {
     return 'Your cart is empty or invalid'
+  }
+
+  // Apparel-only orders skip date/time (48–72 hr delivery, no slot needed)
+  const allApparel = items.every(i => i.isApparel === true)
+  if (!allApparel) {
+    if (!isStr(delivery.date, 10) || !/^\d{4}-\d{2}-\d{2}$/.test(delivery.date)) return 'A valid date is required'
+    if (!isStr(delivery.timeSlot, 60, 1)) return 'A time slot is required'
+  } else if (delivery.date != null && !isStr(delivery.date, 10)) {
+    return 'Invalid date format'
   }
 
   let hasValidItem = false
@@ -301,8 +300,8 @@ exports.handler = async (event) => {
     (giftCardQuantity > 0 && (giftCardTo || giftCardFrom || giftCardMessage))
       ? `GIFT CARD NOTE — To: ${giftCardTo || '—'} | From: ${giftCardFrom || '—'} | Message: ${giftCardMessage || '—'}`
       : null,
-    `DATE: ${delivery.date}`,
-    delivery.timeSlot ? `TIME: ${delivery.timeSlot}` : `TIME: Next-day delivery (no time slot)`,
+    delivery.date ? `DATE: ${delivery.date}` : 'DATE: 48–72 hours (apparel)',
+    delivery.timeSlot ? `TIME: ${delivery.timeSlot}` : null,
     `ADDRESS: ${delivery.address}`,
     delivery.mapsLink ? `MAPS: ${delivery.mapsLink}` : null,
     delivery.notes ? `NOTES: ${delivery.notes}` : null,
@@ -353,7 +352,7 @@ exports.handler = async (event) => {
 
     if (!shopifyRes.ok) {
       if (shopifyRes.status === 401) { _cachedToken = null; _tokenExpiry = 0 }
-      console.error('[create-order] Shopify error:', shopifyRes.status, JSON.stringify(shopifyData))
+      console.error('[create-order] Shopify error:', shopifyRes.status, JSON.stringify({ errors: shopifyData.errors }))
       return { statusCode: 502, headers: { ...CORS, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'We could not place your order right now. Please try again or contact us on WhatsApp.' }) }
     }
 

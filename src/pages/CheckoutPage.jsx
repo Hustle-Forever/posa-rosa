@@ -225,10 +225,12 @@ export default function CheckoutPage() {
     if (!form.name.trim() || !form.phone.trim() || !form.email.trim()) return false
     if (!form.emirate || !form.address.trim() || !form.area) return false
     if (form.area === 'Other' && !form.areaOther.trim()) return false
-    if (!form.date) return false
-    if (form.emirate === 'Abu Dhabi' && !form.timeSlot) return false
+    if (!allApparel) {
+      if (!form.date) return false
+      if (!form.timeSlot) return false   // required for all emirates (not just Abu Dhabi)
+    }
     return true
-  }, [form])
+  }, [form, allApparel])
 
   // Auto-create PaymentIntent when form becomes valid; re-create on total change
   useEffect(() => {
@@ -293,7 +295,7 @@ export default function CheckoutPage() {
       area:      newAreas.includes(f.area) ? f.area : '',
       areaOther: '',
       date:      f.date && f.date < minDate ? '' : f.date,
-      timeSlot:  newEmirate === 'Abu Dhabi' ? f.timeSlot : '',
+      timeSlot:  f.timeSlot,
     }))
     if (errors.emirate)  setErrors(e => ({ ...e, emirate: '' }))
     if (errors.area)     setErrors(e => ({ ...e, area: '' }))
@@ -321,16 +323,24 @@ export default function CheckoutPage() {
     if (!form.address.trim())                                  e.address   = 'Street address is required'
     if (!form.area)                                            e.area      = 'Please select your area'
     if (form.area === 'Other' && !form.areaOther.trim())       e.areaOther = 'Please describe your area'
-    if (!form.date) e.date = 'Please choose a delivery date'
-    if (form.emirate === 'Abu Dhabi') {
+    if (!allApparel) {
       const nowUAE = uaeNow()
-      if (form.date === nowUAE.date && TIME_SLOTS.every(s => nowUAE.minutes >= s.endHour * 60)) {
+      const minDate = deliveryDateMin(form.emirate)
+      if (!form.date) {
+        e.date = 'Please choose a delivery date'
+      } else if (form.date < minDate) {
+        e.date = form.emirate !== 'Abu Dhabi'
+          ? 'Same-day delivery is only available in Abu Dhabi — please select tomorrow or later'
+          : 'Please select today or later'
+      } else if (form.emirate === 'Abu Dhabi' && form.date === nowUAE.date &&
+                 TIME_SLOTS.every(s => nowUAE.minutes >= s.endHour * 60)) {
         e.date = ALL_SLOTS_PASSED_MSG
-      } else if (!form.timeSlot) {
+      }
+      if (!form.timeSlot) {
         e.timeSlot = 'Please select a time slot'
       } else {
         const slot = TIME_SLOTS.find(s => `${s.label} ${s.hours}` === form.timeSlot)
-        if (slot && slotHasPassed(slot, form.date, nowUAE)) {
+        if (slot && isAbuDhabi && slotHasPassed(slot, form.date, nowUAE)) {
           e.timeSlot = 'That time slot has passed — please pick another'
         }
       }
@@ -403,6 +413,9 @@ export default function CheckoutPage() {
         @media (max-width: 600px) {
           .co-time-slots { flex-direction: column !important; }
           .co-time-btn { width: 100% !important; }
+        }
+        @media (max-width: 768px) {
+          .co-input { font-size: 16px !important; }
         }
         .co-mobile-summary { display: none; }
         @media (max-width: 940px) {
@@ -492,12 +505,28 @@ export default function CheckoutPage() {
                 </Field>
               )}
 
-              <Field label="Delivery Date" error={errors.date}>
-                <input className="co-input" type="date" min={deliveryDateMin(form.emirate)}
-                  value={form.date} onChange={e => handleDateChange(e.target.value)} style={inputStyle(errors.date)} />
-              </Field>
+              {allApparel ? (
+                <div style={{
+                  padding: '0.875rem 1rem',
+                  border: '1px solid rgba(201,169,110,0.25)',
+                  borderRadius: '8px', background: 'rgba(201,169,110,0.06)',
+                }}>
+                  <span style={{
+                    fontFamily: 'var(--font-sans)', fontSize: '0.7rem',
+                    letterSpacing: '0.1em', textTransform: 'uppercase',
+                    color: 'rgba(61,26,26,0.72)', fontWeight: 500,
+                  }}>
+                    Delivery: 48–72 hours
+                  </span>
+                </div>
+              ) : (
+                <Field label="Delivery Date" error={errors.date}>
+                  <input className="co-input" type="date" min={deliveryDateMin(form.emirate)}
+                    value={form.date} onChange={e => handleDateChange(e.target.value)} style={inputStyle(errors.date)} />
+                </Field>
+              )}
 
-              {isAbuDhabi && (
+              {!allApparel && (
                 <Field label="Preferred Time" error={errors.timeSlot}>
                   {allSlotsPassed ? (
                     <div style={{
@@ -512,7 +541,7 @@ export default function CheckoutPage() {
                     <div className="co-time-slots" style={{ display: 'flex', gap: '0.75rem' }}>
                       {TIME_SLOTS.map(slot => {
                         const val    = `${slot.label} ${slot.hours}`
-                        const passed = slotHasPassed(slot, form.date, now)
+                        const passed = isAbuDhabi && slotHasPassed(slot, form.date, now)
                         const active = !passed && form.timeSlot === val
                         return (
                           <button key={slot.label} className="co-time-btn" type="button" disabled={passed}

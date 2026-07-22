@@ -15,7 +15,6 @@ const ALLOWED_ORIGINS = new Set(
   [
     'https://posarosa.ae',
     'https://www.posarosa.ae',
-    'https://famous-fox-da26ec.netlify.app',
     'https://posa-rosa.netlify.app',
     'http://localhost:5173',
     'http://localhost:8888',
@@ -52,6 +51,21 @@ const GIFT_CARD_PRICE  = 5
 const MAX_ITEMS        = 50
 const MAX_QTY          = 100
 
+// ── Rate limiting (10 requests / 60 s / IP) ───────────────────────────────────
+const _piHits      = new Map()
+const PI_LIMIT     = 10
+const PI_WINDOW_MS = 60_000
+
+function isRateLimited(ip) {
+  const now  = Date.now()
+  const hits = (_piHits.get(ip) || []).filter(t => now - t < PI_WINDOW_MS)
+  if (hits.length >= PI_LIMIT) { _piHits.set(ip, hits); return true }
+  hits.push(now)
+  _piHits.set(ip, hits)
+  if (_piHits.size > 5000) _piHits.clear()
+  return false
+}
+
 // ── Handler ───────────────────────────────────────────────────────────────────
 exports.handler = async (event) => {
   const origin = event.headers?.origin || event.headers?.Origin
@@ -65,6 +79,16 @@ exports.handler = async (event) => {
   if (origin && !isAllowedOrigin(origin)) {
     return { statusCode: 403, headers: { ...CORS, 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'Forbidden' }) }
+  }
+
+  const ip =
+    event.headers?.['x-nf-client-connection-ip'] ||
+    (event.headers?.['x-forwarded-for'] || '').split(',')[0].trim() ||
+    'unknown'
+
+  if (isRateLimited(ip)) {
+    return { statusCode: 429, headers: { ...CORS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Too many requests — please wait a moment and try again' }) }
   }
 
   let body

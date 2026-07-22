@@ -61,7 +61,6 @@ const ALLOWED_ORIGINS = new Set(
   [
     'https://posarosa.ae',
     'https://www.posarosa.ae',
-    'https://famous-fox-da26ec.netlify.app',
     'https://posa-rosa.netlify.app',
     'http://localhost:5173',
     'http://localhost:8888',
@@ -191,13 +190,14 @@ exports.handler = async (event) => {
     return { statusCode: 422, headers: { ...CORS, 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'Customer details required' }) }
   }
-  if (!delivery?.address || !delivery?.area || !delivery?.date) {
-    return { statusCode: 422, headers: { ...CORS, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'Delivery details required' }) }
-  }
   if (!Array.isArray(items) || items.length === 0) {
     return { statusCode: 422, headers: { ...CORS, 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'Items required' }) }
+  }
+  const allApparel = items.every(i => i.isApparel === true)
+  if (!delivery?.address || !delivery?.area || (!allApparel && !delivery?.date)) {
+    return { statusCode: 422, headers: { ...CORS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Delivery details required' }) }
   }
 
   const phone = normalizeUAEPhone(customer.phone || '')
@@ -259,8 +259,8 @@ exports.handler = async (event) => {
     giftCardQuantity > 0 && (giftCardTo || giftCardFrom || giftCardMessage)
       ? `GIFT CARD NOTE — To: ${giftCardTo || '—'} | From: ${giftCardFrom || '—'} | Message: ${giftCardMessage || '—'}`
       : null,
-    `DATE: ${delivery.date}`,
-    delivery.timeSlot ? `TIME: ${delivery.timeSlot}` : `TIME: Next-day delivery (no time slot)`,
+    delivery.date ? `DATE: ${delivery.date}` : (allApparel ? 'DATE: 48–72 hours (apparel)' : null),
+    delivery.timeSlot ? `TIME: ${delivery.timeSlot}` : null,
     `ADDRESS: ${delivery.address}`,
     delivery.mapsLink ? `MAPS: ${delivery.mapsLink}` : null,
     delivery.notes    ? `NOTES: ${delivery.notes}` : null,
