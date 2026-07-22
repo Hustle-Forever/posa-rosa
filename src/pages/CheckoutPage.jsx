@@ -3,16 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useCart } from '../context/CartContext'
-import { EMIRATE_AREAS, EMIRATES, getDeliveryFee, getFulfillment } from '../lib/fulfillment'
+import { EMIRATE_AREAS, EMIRATES, getDeliveryFee, getFulfillment, TIME_SLOTS, slotClosedToday } from '../lib/fulfillment'
 import { stripePromise } from '../lib/stripe'
-
-const TIME_SLOTS = [
-  { label: 'Morning',   hours: '9AM – 12PM', endHour: 12 },
-  { label: 'Afternoon', hours: '12PM – 5PM', endHour: 17 },
-  { label: 'Evening',   hours: '5PM – 8PM',  endHour: 20 },
-]
-
-const ALL_SLOTS_PASSED_MSG = 'No more delivery slots today — please select tomorrow'
 
 const STRIPE_APPEARANCE = {
   theme: 'stripe',
@@ -44,10 +36,6 @@ function uaeNow() {
     date:    `${get('year')}-${get('month')}-${get('day')}`,
     minutes: parseInt(get('hour'), 10) * 60 + parseInt(get('minute'), 10),
   }
-}
-
-function slotHasPassed(slot, deliveryDate, now) {
-  return deliveryDate === now.date && now.minutes >= slot.endHour * 60
 }
 
 function inputStyle(hasError) {
@@ -207,8 +195,7 @@ export default function CheckoutPage() {
 
   const isAbuDhabi     = form.emirate === 'Abu Dhabi'
   const now            = uaeNow()
-  const isTodayUAE     = isAbuDhabi && form.date === now.date
-  const allSlotsPassed = isTodayUAE && TIME_SLOTS.every(s => now.minutes >= s.endHour * 60)
+  const isTodayUAE = isAbuDhabi && form.date === now.date
 
   // Restore saved form on retry redirect
   useEffect(() => {
@@ -306,8 +293,8 @@ export default function CheckoutPage() {
     const nowUAE = uaeNow()
     setFormState(f => {
       const slot   = TIME_SLOTS.find(s => `${s.label} ${s.hours}` === f.timeSlot)
-      const passed = slot && slotHasPassed(slot, newDate, nowUAE)
-      return { ...f, date: newDate, timeSlot: passed ? '' : f.timeSlot }
+      const closed = slot && slotClosedToday(slot, newDate, nowUAE)
+      return { ...f, date: newDate, timeSlot: closed ? '' : f.timeSlot }
     })
     if (errors.date) setErrors(e => ({ ...e, date: '' }))
   }
@@ -332,16 +319,13 @@ export default function CheckoutPage() {
         e.date = form.emirate !== 'Abu Dhabi'
           ? 'Same-day delivery is only available in Abu Dhabi — please select tomorrow or later'
           : 'Please select today or later'
-      } else if (form.emirate === 'Abu Dhabi' && form.date === nowUAE.date &&
-                 TIME_SLOTS.every(s => nowUAE.minutes >= s.endHour * 60)) {
-        e.date = ALL_SLOTS_PASSED_MSG
       }
       if (isAbuDhabi) {
         if (!form.timeSlot) {
           e.timeSlot = 'Please select a time slot'
         } else {
           const slot = TIME_SLOTS.find(s => `${s.label} ${s.hours}` === form.timeSlot)
-          if (slot && slotHasPassed(slot, form.date, nowUAE)) {
+          if (slot && slotClosedToday(slot, form.date, nowUAE)) {
             e.timeSlot = 'That time slot has passed — please pick another'
           }
         }
@@ -539,48 +523,46 @@ export default function CheckoutPage() {
 
               {isAbuDhabi && !allApparel && (
                 <Field label="Preferred Time" error={errors.timeSlot} data-field="timeSlot">
-                  {allSlotsPassed ? (
-                    <div style={{
-                      padding: '0.9rem 1rem',
-                      border: '1px solid rgba(192,57,43,0.35)', background: 'rgba(192,57,43,0.06)',
-                      borderRadius: '8px', fontFamily: 'var(--font-sans)', fontSize: '0.78rem',
-                      color: '#c0392b', lineHeight: 1.5,
+                  <div className="co-time-slots" style={{ display: 'flex', gap: '0.75rem' }}>
+                    {TIME_SLOTS.map(slot => {
+                      const val    = `${slot.label} ${slot.hours}`
+                      const closed = slotClosedToday(slot, form.date, now)
+                      const active = !closed && form.timeSlot === val
+                      return (
+                        <button key={slot.label} data-testid={`slot-${slot.label}`}
+                          className="co-time-btn" type="button" disabled={closed}
+                          onClick={() => set('timeSlot', val)}
+                          style={{
+                            flex: 1, padding: '0.75rem 0.875rem',
+                            border: `1px solid ${active ? 'var(--color-dark)' : 'rgba(61,26,26,0.18)'}`,
+                            background: closed ? 'rgba(61,26,26,0.05)' : active ? 'var(--color-dark)' : '#fff',
+                            color: active ? '#FDF6F0' : 'var(--color-dark)',
+                            opacity: closed ? 0.55 : 1,
+                            borderRadius: '8px', cursor: closed ? 'not-allowed' : 'pointer', textAlign: 'left',
+                            fontFamily: 'var(--font-sans)', transition: 'all 0.22s ease',
+                          }}
+                        >
+                          <div style={{ fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.03em' }}>
+                            {slot.label}
+                            {closed && (
+                              <span style={{ marginLeft: '0.4rem', fontSize: '0.58rem', fontWeight: 500,
+                                letterSpacing: '0.1em', textTransform: 'uppercase', color: '#c0392b' }}>
+                                Closed
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '0.66rem', opacity: 0.65, marginTop: '2px' }}>{slot.hours}</div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {isTodayUAE && TIME_SLOTS.some(s => slotClosedToday(s, form.date, now)) && (
+                    <p data-testid="slot-helper" style={{
+                      margin: '0.5rem 0 0', fontFamily: 'var(--font-sans)', fontSize: '0.68rem',
+                      color: 'rgba(61,26,26,0.6)',
                     }}>
-                      {ALL_SLOTS_PASSED_MSG}
-                    </div>
-                  ) : (
-                    <div className="co-time-slots" style={{ display: 'flex', gap: '0.75rem' }}>
-                      {TIME_SLOTS.map(slot => {
-                        const val    = `${slot.label} ${slot.hours}`
-                        const passed = isAbuDhabi && slotHasPassed(slot, form.date, now)
-                        const active = !passed && form.timeSlot === val
-                        return (
-                          <button key={slot.label} className="co-time-btn" type="button" disabled={passed}
-                            onClick={() => set('timeSlot', val)}
-                            style={{
-                              flex: 1, padding: '0.75rem 0.875rem',
-                              border: `1px solid ${active ? 'var(--color-dark)' : 'rgba(61,26,26,0.18)'}`,
-                              background: passed ? 'rgba(61,26,26,0.05)' : active ? 'var(--color-dark)' : '#fff',
-                              color: active ? '#FDF6F0' : 'var(--color-dark)',
-                              opacity: passed ? 0.55 : 1,
-                              borderRadius: '8px', cursor: passed ? 'not-allowed' : 'pointer', textAlign: 'left',
-                              fontFamily: 'var(--font-sans)', transition: 'all 0.22s ease',
-                            }}
-                          >
-                            <div style={{ fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.03em' }}>
-                              {slot.label}
-                              {passed && (
-                                <span style={{ marginLeft: '0.4rem', fontSize: '0.58rem', fontWeight: 500,
-                                  letterSpacing: '0.1em', textTransform: 'uppercase', color: '#c0392b' }}>
-                                  Passed
-                                </span>
-                              )}
-                            </div>
-                            <div style={{ fontSize: '0.66rem', opacity: 0.65, marginTop: '2px' }}>{slot.hours}</div>
-                          </button>
-                        )
-                      })}
-                    </div>
+                      Some slots are closed for today&apos;s orders.
+                    </p>
                   )}
                 </Field>
               )}

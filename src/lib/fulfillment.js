@@ -31,3 +31,20 @@ export function getFulfillment() {
 export function setFulfillment(data) {
   try { sessionStorage.setItem(KEY, JSON.stringify(data)) } catch {}
 }
+
+// ── Abu Dhabi same-day delivery slots (Asia/Dubai) ─────────────────────────────
+// sameDayCutoff: minutes-since-midnight after which the slot closes for TODAY.
+// null = never available same-day (must be ordered the day before).
+export const TIME_SLOTS = [
+  { label: 'Morning',   hours: '9AM – 12PM', sameDayCutoff: null },
+  { label: 'Afternoon', hours: '12PM – 5PM', sameDayCutoff: 13 * 60 },      // 13:00
+  { label: 'Evening',   hours: '5PM – 8PM',  sameDayCutoff: 17 * 60 + 30 }, // 17:30
+]
+
+// True when the slot cannot be delivered for the chosen date.
+// deliveryDate / now.date are 'YYYY-MM-DD' (Asia/Dubai); now.minutes is minutes-since-midnight.
+export function slotClosedToday(slot, deliveryDate, now) {
+  if (deliveryDate !== now.date) return false   // tomorrow-or-later: always open
+  if (slot.sameDayCutoff == null) return true    // never same-day (Morning)
+  return now.minutes >= slot.sameDayCutoff
+}
