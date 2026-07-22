@@ -207,10 +207,11 @@ exports.handler = async (event) => {
     return { statusCode: 413, headers: { ...CORS, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Request too large' }) }
   }
 
-  let customer, delivery, items, total, giftCardQuantity, rawGiftCardTo, rawGiftCardFrom, rawGiftCardMessage
+  let customer, delivery, items, total, giftCardQuantity, rawGiftCardTo, rawGiftCardFrom, rawGiftCardMessage, paymentIntentId
   try {
     ;({ customer, delivery, items, total, giftCardQuantity,
         giftCardTo: rawGiftCardTo, giftCardFrom: rawGiftCardFrom, giftCardMessage: rawGiftCardMessage,
+        paymentIntentId,
       } = JSON.parse(event.body))
   } catch {
     return { statusCode: 400, headers: { ...CORS, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Invalid request body' }) }
@@ -289,10 +290,13 @@ exports.handler = async (event) => {
 
   const deliveryTiming = emirate === 'Abu Dhabi' ? 'Same-day' : 'Next-day'
 
+  const safePaymentIntentId = typeof paymentIntentId === 'string' ? paymentIntentId.slice(0, 120) : null
+
   const noteLines = [
     `⚠ FULFILLMENT: DELIVERY — ${emirate} · ${delivery.area}`,
     `DELIVERY TIMING: ${deliveryTiming} (${emirate})`,
     `DELIVERY FEE: AED ${deliveryFee}`,
+    safePaymentIntentId ? `STRIPE PAYMENT: ${safePaymentIntentId}` : null,
     giftCardQuantity > 0 ? `GIFT CARD: ×${giftCardQuantity} — AED ${giftCardQuantity * 5}` : null,
     (giftCardQuantity > 0 && (giftCardTo || giftCardFrom || giftCardMessage))
       ? `GIFT CARD NOTE — To: ${giftCardTo || '—'} | From: ${giftCardFrom || '—'} | Message: ${giftCardMessage || '—'}`
@@ -319,6 +323,9 @@ exports.handler = async (event) => {
       },
       financial_status: 'pending',
       note:             noteLines.filter(Boolean).join('\n'),
+      note_attributes:  safePaymentIntentId
+        ? [{ name: 'stripe_payment_intent_id', value: safePaymentIntentId }]
+        : [],
       tags:             'posa-rosa-website',
       send_receipt:     true,
     },
@@ -384,6 +391,7 @@ exports.handler = async (event) => {
         giftCardTo,
         giftCardFrom,
         giftCardMessage,
+        ...(safePaymentIntentId ? { paymentIntentId: safePaymentIntentId, paymentMethod: 'stripe' } : {}),
         total,
         createdAt: new Date().toISOString(),
       })

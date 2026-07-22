@@ -178,6 +178,76 @@ The shop uses a three-step flow: **Category → Delivery area → Products**.
 
 - A new **`ApparelHighlight`** section appears on the home page directly after "How to Order". It fetches the first apparel product's images from the `apparel` Shopify collection and shows them front-and-back with a "Shop the Collection" CTA linking to `/shop?category=collection`.
 
+## Payments (Stripe)
+
+Stripe is integrated as a backend-only layer. The browser never touches Stripe directly.
+
+### Environment variables (add to `.env` and Netlify site settings)
+
+```
+STRIPE_SECRET_KEY=sk_live_...          # or sk_test_... for local dev
+STRIPE_WEBHOOK_SECRET=whsec_...        # from Stripe Dashboard → Webhooks
+```
+
+### API routes
+
+| Route | Function | Purpose |
+|---|---|---|
+| `POST /api/create-payment-intent` | `create-payment-intent.js` | Server validates total, creates Stripe PaymentIntent, returns `clientSecret` |
+| `POST /api/finalize-order` | `finalize-order.js` | Verifies PaymentIntent succeeded, creates Shopify order (`financial_status: paid`), writes to Firestore |
+| `POST /api/stripe-webhook` | `stripe-webhook.js` | Receives Stripe events, verifies signature, logs event id + type only |
+
+### Webhook URL
+
+Register `https://posa-rosa.netlify.app/api/stripe-webhook` in **Stripe Dashboard → Webhooks**. Events to listen for: `payment_intent.succeeded`, `payment_intent.payment_failed`.
+
+### Firestore collections
+
+- `orders/{orderNumber}` — order record (includes `paymentIntentId` + `paymentMethod: 'stripe'` when paid via Stripe)
+- `pending_intents/{paymentIntentId}` — idempotency lock (`status: processing | completed | failed`) used by `finalize-order` to prevent duplicate orders on retry
+
+### Firestore security rules
+
+After deploying these rules, the client SDK can no longer write orders directly — all writes go through Netlify functions.
+
+Paste into **Firebase Console → Firestore → Rules → Publish**:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /orders/{orderId} {
+      allow create: if true;
+      allow read, update, delete: if false;
+    }
+    match /pending_intents/{intentId} {
+      allow read, write: if true;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+```
+
+> **Note:** `create-order.js` and `finalize-order.js` currently use the Firebase **client SDK** (`firebase/firestore/lite`). To fully lock down Firestore (deny all client writes), migrate those functions to `firebase-admin` (Admin SDK, which bypasses security rules), then replace the rules above with a single `allow read, write: if false` catch-all.
+
+### Quick smoke test (requires `netlify dev` running with Stripe test keys)
+
+```bash
+# 1. Create a PaymentIntent
+curl -s -X POST http://localhost:8888/api/create-payment-intent \
+  -H "Content-Type: application/json" \
+  -d '{"items":[{"variantId":"gid://shopify/ProductVariant/1","price":165,"quantity":1,"customItem":"mix-box"}],"emirate":"Abu Dhabi","claimedTotal":200}' | jq .
+
+# 2. Finalize (use a real succeeded pi_ ID from Stripe test mode)
+curl -s -X POST http://localhost:8888/api/finalize-order \
+  -H "Content-Type: application/json" \
+  -d '{"paymentIntentId":"pi_test_xxx","customer":{"name":"Test","email":"test@example.com","phone":"0501234567"},"delivery":{"address":"123 Test St","area":"Khalidiyah","emirate":"Abu Dhabi","date":"2026-07-22"},"items":[{"variantId":"gid://shopify/ProductVariant/1","price":165,"quantity":1}],"total":200}' | jq .
+```
+
+---
+
 ### Needs Natinael's input before going live
 
 - WhatsApp number: `+971500000000` is a placeholder in About, Contact pages → replace with real number.

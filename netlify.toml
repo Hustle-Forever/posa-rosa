@@ -12,6 +12,21 @@
   status = 200
 
 [[redirects]]
+  from = "/api/create-payment-intent"
+  to = "/.netlify/functions/create-payment-intent"
+  status = 200
+
+[[redirects]]
+  from = "/api/finalize-order"
+  to = "/.netlify/functions/finalize-order"
+  status = 200
+
+[[redirects]]
+  from = "/api/stripe-webhook"
+  to = "/.netlify/functions/stripe-webhook"
+  status = 200
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
