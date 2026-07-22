@@ -228,7 +228,7 @@ export default function CheckoutPage() {
     if (form.area === 'Other' && !form.areaOther.trim()) return false
     if (!allApparel) {
       if (!form.date) return false
-      if (!form.timeSlot) return false   // required for all emirates (not just Abu Dhabi)
+      if (form.emirate === 'Abu Dhabi' && !form.timeSlot) return false
     }
     return true
   }, [form, allApparel])
@@ -336,12 +336,14 @@ export default function CheckoutPage() {
                  TIME_SLOTS.every(s => nowUAE.minutes >= s.endHour * 60)) {
         e.date = ALL_SLOTS_PASSED_MSG
       }
-      if (!form.timeSlot) {
-        e.timeSlot = 'Please select a time slot'
-      } else {
-        const slot = TIME_SLOTS.find(s => `${s.label} ${s.hours}` === form.timeSlot)
-        if (slot && isAbuDhabi && slotHasPassed(slot, form.date, nowUAE)) {
-          e.timeSlot = 'That time slot has passed — please pick another'
+      if (isAbuDhabi) {
+        if (!form.timeSlot) {
+          e.timeSlot = 'Please select a time slot'
+        } else {
+          const slot = TIME_SLOTS.find(s => `${s.label} ${s.hours}` === form.timeSlot)
+          if (slot && slotHasPassed(slot, form.date, nowUAE)) {
+            e.timeSlot = 'That time slot has passed — please pick another'
+          }
         }
       }
     }
@@ -535,7 +537,7 @@ export default function CheckoutPage() {
                 </Field>
               )}
 
-              {!allApparel && (
+              {isAbuDhabi && !allApparel && (
                 <Field label="Preferred Time" error={errors.timeSlot} data-field="timeSlot">
                   {allSlotsPassed ? (
                     <div style={{
