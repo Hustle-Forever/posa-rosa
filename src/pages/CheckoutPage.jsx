@@ -104,9 +104,9 @@ function FormSection({ number, title, children }) {
   )
 }
 
-function Field({ label, error, children }) {
+function Field({ label, error, children, ...rest }) {
   return (
-    <div>
+    <div {...rest}>
       <label style={{
         display: 'block', fontFamily: 'var(--font-sans)',
         fontSize: '0.63rem', letterSpacing: '0.14em', textTransform: 'uppercase',
@@ -191,6 +191,7 @@ export default function CheckoutPage() {
   const [creatingIntent, setCreatingIntent]     = useState(false)
   const [paymentError,  setPaymentError]        = useState(null)
   const paymentFieldRef = useRef(null)
+  const isFirstRender   = useRef(true)
 
   const allApparel  = items.length > 0 && items.every(i => i.isApparel)
   const deliveryFee = allApparel ? 22 : getDeliveryFee(form.emirate)
@@ -232,54 +233,53 @@ export default function CheckoutPage() {
     return true
   }, [form, allApparel])
 
-  // Auto-create PaymentIntent when form becomes valid; re-create on total change
+  // Create PaymentIntent on mount; re-create (debounced 500ms) when total changes
   useEffect(() => {
-    if (!formValid) {
-      setClientSecret(null)
-      setPaymentError(null)
-      setCreatingIntent(false)
-      return
+    if (!items.length) {
+      setClientSecret(null); setCreatingIntent(false); setPaymentError(null); return
     }
-
+    const immediate = isFirstRender.current
+    isFirstRender.current = false
     let cancelled = false
-    setClientSecret(null)
     setCreatingIntent(true)
     setPaymentError(null)
-
-    fetch('/api/create-payment-intent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        items: items.map(i => ({
-          variantId:  i.variantId  || null,
-          price:      i.price,
-          quantity:   i.quantity,
-          isApparel:  i.isApparel  || false,
-          customItem: i.customItem || undefined,
-        })),
-        emirate:          form.emirate,
-        claimedTotal:     orderTotal,
-        giftCardQuantity: giftCardQty,
-      }),
-    })
-      .then(r => r.json())
-      .then(d => {
-        if (cancelled) return
-        if (d.error) {
-          setPaymentError(
-            d.error.includes('Price mismatch')
-              ? 'Your cart total changed. Please review and try again.'
-              : d.error
-          )
-        } else {
-          setClientSecret(d.clientSecret)
-        }
+    const timer = setTimeout(() => {
+      if (cancelled) return
+      setClientSecret(null)
+      fetch('/api/create-payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map(i => ({
+            variantId:  i.variantId  || null,
+            price:      i.price,
+            quantity:   i.quantity,
+            isApparel:  i.isApparel  || false,
+            customItem: i.customItem || undefined,
+          })),
+          emirate:          form.emirate,
+          claimedTotal:     orderTotal,
+          giftCardQuantity: giftCardQty,
+        }),
       })
-      .catch(() => { if (!cancelled) setPaymentError('Payment setup failed — please try again') })
-      .finally(() => { if (!cancelled) setCreatingIntent(false) })
-
-    return () => { cancelled = true }
-  }, [formValid, orderTotal]) // eslint-disable-line react-hooks/exhaustive-deps
+        .then(r => r.json())
+        .then(d => {
+          if (cancelled) return
+          if (d.error) {
+            setPaymentError(
+              d.error.includes('Price mismatch')
+                ? 'Your cart total changed. Please review and try again.'
+                : d.error
+            )
+          } else {
+            setClientSecret(d.clientSecret)
+          }
+        })
+        .catch(() => { if (!cancelled) setPaymentError('Payment setup failed — please try again') })
+        .finally(() => { if (!cancelled) setCreatingIntent(false) })
+    }, immediate ? 0 : 500)
+    return () => { cancelled = true; clearTimeout(timer) }
+  }, [orderTotal]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function set(key, val) {
     setFormState(f => ({ ...f, [key]: val }))
@@ -346,7 +346,7 @@ export default function CheckoutPage() {
       }
     }
     setErrors(e)
-    return Object.keys(e).length === 0
+    return e
   }
 
   async function handlePlaceOrder() {
@@ -354,8 +354,18 @@ export default function CheckoutPage() {
       setServerError('Your cart is empty — add some chocolates before placing an order.')
       return
     }
-    if (!validate()) return
-    if (!clientSecret || !paymentFieldRef.current) {
+    const errs = validate()
+    if (Object.keys(errs).length > 0) {
+      const fieldOrder = ['name', 'phone', 'email', 'emirate', 'address', 'area', 'areaOther', 'date', 'timeSlot']
+      const firstKey   = fieldOrder.find(k => errs[k])
+      if (firstKey) {
+        setTimeout(() => {
+          document.querySelector(`[data-field="${firstKey}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }, 50)
+      }
+      return
+    }
+    if (!clientSecret || creatingIntent || !paymentFieldRef.current) {
       setPaymentError(
         creatingIntent
           ? 'Setting up payment — please wait a moment'
@@ -388,8 +398,7 @@ export default function CheckoutPage() {
     setLoading(false)
   }
 
-  const btnReady    = clientSecret && !creatingIntent && !loading
-  const btnDisabled = loading || (formValid && !clientSecret)
+  const btnDisabled = loading || !formValid || creatingIntent || !clientSecret
 
   return (
     <motion.div
@@ -448,15 +457,15 @@ export default function CheckoutPage() {
 
             {/* 01 Your Details */}
             <FormSection number="01" title="Your Details">
-              <Field label="Full Name" error={errors.name}>
+              <Field label="Full Name" error={errors.name} data-field="name">
                 <input className="co-input" type="text" placeholder="Fatima Al Mansoori"
                   value={form.name} onChange={e => set('name', e.target.value)} style={inputStyle(errors.name)} />
               </Field>
-              <Field label="Phone Number" error={errors.phone}>
+              <Field label="Phone Number" error={errors.phone} data-field="phone">
                 <input className="co-input" type="tel" placeholder="+971 50 000 0000"
                   value={form.phone} onChange={e => set('phone', e.target.value)} style={inputStyle(errors.phone)} />
               </Field>
-              <Field label="Email Address" error={errors.email}>
+              <Field label="Email Address" error={errors.email} data-field="email">
                 <input className="co-input" type="email" placeholder="you@example.com"
                   value={form.email} onChange={e => set('email', e.target.value)} style={inputStyle(errors.email)} />
               </Field>
@@ -464,7 +473,7 @@ export default function CheckoutPage() {
 
             {/* 02 Delivery Details */}
             <FormSection number="02" title="Delivery Details">
-              <Field label="Emirate" error={errors.emirate}>
+              <Field label="Emirate" error={errors.emirate} data-field="emirate">
                 <select className="co-input" value={form.emirate} onChange={e => handleEmirateChange(e.target.value)}
                   style={selectStyle(errors.emirate)}>
                   <option value="">Select emirate</option>
@@ -484,12 +493,12 @@ export default function CheckoutPage() {
                 )}
               </Field>
 
-              <Field label="Street Address" error={errors.address}>
+              <Field label="Street Address" error={errors.address} data-field="address">
                 <input className="co-input" type="text" placeholder="Villa 12, Street 5"
                   value={form.address} onChange={e => set('address', e.target.value)} style={inputStyle(errors.address)} />
               </Field>
 
-              <Field label="Area" error={errors.area}>
+              <Field label="Area" error={errors.area} data-field="area">
                 <select className="co-input" value={form.area} onChange={e => set('area', e.target.value)}
                   style={selectStyle(errors.area)}>
                   <option value="">Select area</option>
@@ -498,7 +507,7 @@ export default function CheckoutPage() {
               </Field>
 
               {form.area === 'Other' && (
-                <Field label="Your Area / Neighbourhood" error={errors.areaOther}>
+                <Field label="Your Area / Neighbourhood" error={errors.areaOther} data-field="areaOther">
                   <input className="co-input" type="text" placeholder="e.g. Palm Jumeirah"
                     value={form.areaOther} onChange={e => set('areaOther', e.target.value)}
                     style={inputStyle(errors.areaOther)} />
@@ -520,14 +529,14 @@ export default function CheckoutPage() {
                   </span>
                 </div>
               ) : (
-                <Field label="Delivery Date" error={errors.date}>
+                <Field label="Delivery Date" error={errors.date} data-field="date">
                   <input className="co-input" type="date" min={deliveryDateMin(form.emirate)}
                     value={form.date} onChange={e => handleDateChange(e.target.value)} style={inputStyle(errors.date)} />
                 </Field>
               )}
 
               {!allApparel && (
-                <Field label="Preferred Time" error={errors.timeSlot}>
+                <Field label="Preferred Time" error={errors.timeSlot} data-field="timeSlot">
                   {allSlotsPassed ? (
                     <div style={{
                       padding: '0.9rem 1rem',
@@ -589,34 +598,28 @@ export default function CheckoutPage() {
 
             {/* 03 Payment */}
             <FormSection number="03" title="Payment">
-              {!formValid ? (
-                <div style={{
-                  padding: '1.75rem 1.5rem', textAlign: 'center',
-                  border: '1px solid rgba(61,26,26,0.1)', borderRadius: '10px',
-                  background: 'rgba(61,26,26,0.02)',
-                }}>
-                  <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.4)', lineHeight: 1.6 }}>
-                    Complete your details above to unlock payment
-                  </p>
-                </div>
-              ) : (creatingIntent || !clientSecret) && !paymentError ? (
+              {clientSecret ? (
+                <Elements stripe={stripePromise} options={{ clientSecret, appearance: STRIPE_APPEARANCE }}>
+                  <StripePaymentField ref={paymentFieldRef} onError={setPaymentError} />
+                </Elements>
+              ) : (
                 <div style={{
                   padding: '1.75rem 1.5rem',
                   border: '1px solid rgba(61,26,26,0.1)', borderRadius: '10px',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
+                  minHeight: '120px',
                 }}>
-                  <Spinner />
-                  <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.55)' }}>
-                    Setting up secure payment…
-                  </p>
+                  {paymentError ? (
+                    <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#c0392b', lineHeight: 1.5, textAlign: 'center' }}>
+                      {paymentError}
+                    </p>
+                  ) : (
+                    <><Spinner /><p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: 'rgba(61,26,26,0.55)' }}>Setting up secure payment…</p></>
+                  )}
                 </div>
-              ) : clientSecret ? (
-                <Elements stripe={stripePromise} options={{ clientSecret, appearance: STRIPE_APPEARANCE }}>
-                  <StripePaymentField ref={paymentFieldRef} onError={setPaymentError} />
-                </Elements>
-              ) : null}
+              )}
 
-              {paymentError && (
+              {clientSecret && paymentError && (
                 <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                   style={{ margin: '0.75rem 0 0', fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#c0392b', lineHeight: 1.5 }}>
                   {paymentError}
@@ -631,7 +634,7 @@ export default function CheckoutPage() {
               items={items} cartTotal={cartTotal} orderTotal={orderTotal}
               deliveryFee={deliveryFee} giftCardQty={giftCardQty} giftCardTotal={giftCardTotal}
               loading={loading} serverError={serverError} errors={errors}
-              paymentError={paymentError} btnReady={btnReady} creatingIntent={creatingIntent}
+              paymentError={paymentError} btnDisabled={btnDisabled}
               onPlace={handlePlaceOrder}
             />
           </div>
@@ -662,8 +665,8 @@ export default function CheckoutPage() {
               display: 'flex', alignItems: 'center',
             }}
           >
-            {(loading || (formValid && creatingIntent)) && <Spinner light />}
-            {loading ? 'Processing…' : (formValid && creatingIntent) ? 'Setting up…' : 'Place Order'}
+            {(loading || creatingIntent) && <Spinner light />}
+            {loading ? 'Processing…' : creatingIntent ? 'Setting up…' : 'Place Order'}
           </motion.button>
         </div>
         {paymentError && (
@@ -688,12 +691,9 @@ export default function CheckoutPage() {
 
 function OrderSummaryCard({
   items, cartTotal, orderTotal, deliveryFee, giftCardQty = 0, giftCardTotal = 0,
-  loading, serverError, errors, paymentError, btnReady, creatingIntent, onPlace,
+  loading, serverError, errors, paymentError, btnDisabled, onPlace,
 }) {
-  const btnDisabled = loading || (!btnReady && !creatingIntent)
-  const btnLabel    = loading ? 'Processing your order…'
-    : creatingIntent           ? 'Setting up payment…'
-    : 'Place Order'
+  const btnLabel = loading ? 'Processing your order…' : 'Place Order'
 
   return (
     <div style={{ background: '#fff', borderRadius: '14px', padding: '2rem', boxShadow: '0 4px 32px rgba(61,26,26,0.07)' }}>
@@ -774,7 +774,7 @@ function OrderSummaryCard({
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}
       >
-        {(loading || creatingIntent) && <Spinner light />}
+        {loading && <Spinner light />}
         {btnLabel}
       </motion.button>
 
