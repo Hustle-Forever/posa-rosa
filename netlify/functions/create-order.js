@@ -145,7 +145,8 @@ function validateOrder({ customer, delivery, items }) {
   const allApparel = items.every(i => i.isApparel === true)
   if (!allApparel) {
     if (!isStr(delivery.date, 10) || !/^\d{4}-\d{2}-\d{2}$/.test(delivery.date)) return 'A valid date is required'
-    if (!isStr(delivery.timeSlot, 60, 1)) return 'A time slot is required'
+    // Time slot is required only for Abu Dhabi (same-day) orders.
+    if (delivery.emirate === 'Abu Dhabi' && !isStr(delivery.timeSlot, 60, 1)) return 'A time slot is required'
   } else if (delivery.date != null && !isStr(delivery.date, 10)) {
     return 'Invalid date format'
   }
@@ -177,6 +178,8 @@ function validateOrder({ customer, delivery, items }) {
   if (!hasValidItem) return 'Your cart is empty or invalid'
   return null
 }
+
+exports.validateOrder = validateOrder
 
 exports.handler = async (event) => {
   const origin = event.headers?.origin || event.headers?.Origin
