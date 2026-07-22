@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { getProducts, normalizeProduct } from '../lib/shopify'
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock'
-import { EMIRATE_AREAS, EMIRATES, getDeliveryFee, getDeliveryTiming, getFulfillment, setFulfillment } from '../lib/fulfillment'
+import { EMIRATE_AREAS, EMIRATES, getDeliveryFee, getDeliveryTiming, getFulfillment, setFulfillment, cartMode } from '../lib/fulfillment'
 
 const BOX_SIZE   = 20
 const BOX_PRICE  = 165
@@ -136,14 +136,16 @@ function FulfillmentSelector({ onComplete, isApparel }) {
               <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.66rem', color: 'var(--color-dark)', letterSpacing: '0.04em' }}>
                 Delivery fee: <strong>AED {fee}</strong>
               </span>
-              <span style={{
+              <span data-testid="delivery-timing-badge" style={{
                 fontFamily: 'var(--font-sans)', fontSize: '0.62rem', letterSpacing: '0.06em',
                 padding: '0.15rem 0.5rem', borderRadius: '100px',
-                background: selectedEm === 'Abu Dhabi' ? 'rgba(201,169,110,0.18)' : 'rgba(201,160,163,0.2)',
-                color: selectedEm === 'Abu Dhabi' ? 'var(--color-gold)' : 'var(--color-dark)',
+                background: isApparel || selectedEm === 'Abu Dhabi' ? 'rgba(201,169,110,0.18)' : 'rgba(201,160,163,0.2)',
+                color: isApparel || selectedEm === 'Abu Dhabi' ? 'var(--color-gold)' : 'var(--color-dark)',
                 fontWeight: 600,
               }}>
-                {selectedEm === 'Abu Dhabi' ? 'Same-day delivery' : 'Next-day delivery'}
+                {isApparel
+                  ? '48–72 hour delivery'
+                  : (selectedEm === 'Abu Dhabi' ? 'Same-day delivery' : 'Next-day delivery')}
               </span>
             </div>
 
@@ -841,6 +843,7 @@ function ProductCard({ product, onOpen }) {
 
 export default function ShopPage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const { items } = useCart()
   const [activeTab,    setActiveTab]    = useState(() => {
     const cat = searchParams.get('category')
     if (cat === 'collection') return 'COLLECTION'
@@ -925,6 +928,9 @@ export default function ShopPage() {
   const apparelProducts = products.filter(p =>  p.isApparel)
   const filtered        = isApparel ? apparelProducts : truffleProducts
 
+  const cartKind    = cartMode(items)
+  const apparelMode = cartKind === 'empty' ? isApparel : cartKind === 'apparel'
+
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}
@@ -1007,14 +1013,14 @@ export default function ShopPage() {
 
       {/* ── Step 2: Fulfillment ── */}
       {shopStep === 'fulfillment' && (
-        <FulfillmentSelector onComplete={completeFulfillment} isApparel={isApparel} />
+        <FulfillmentSelector onComplete={completeFulfillment} isApparel={apparelMode} />
       )}
 
       {/* ── Step 3: Products ── */}
       {shopStep === 'products' && (
         <>
           {/* Fulfillment summary chip */}
-          <FulfillmentSummary data={fulfillmentData} onChange={changeFulfillment} isApparel={isApparel} />
+          <FulfillmentSummary data={fulfillmentData} onChange={changeFulfillment} isApparel={apparelMode} />
 
           {/* Filter Bar */}
           <div className="shop-filter-bar"

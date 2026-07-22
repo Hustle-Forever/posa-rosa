@@ -48,3 +48,9 @@ export function slotClosedToday(slot, deliveryDate, now) {
   if (slot.sameDayCutoff == null) return true    // never same-day (Morning)
   return now.minutes >= slot.sameDayCutoff
 }
+
+// Classify cart for delivery-rule display: 'empty' | 'apparel' | 'truffle'.
+export function cartMode(items) {
+  if (!items || items.length === 0) return 'empty'
+  return items.every(i => i.isApparel) ? 'apparel' : 'truffle'
+}

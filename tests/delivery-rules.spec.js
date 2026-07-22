@@ -99,3 +99,20 @@ test.describe('FIX 3 — apparel checkout', () => {
     await expect(page.getByText('Delivery: 48–72 hours')).toBeVisible()
   })
 })
+
+test.describe('FIX 3 — apparel shop gate', () => {
+  test('apparel-only cart, Abu Dhabi → 48–72h badge, AED 22, no same-day', async ({ page }) => {
+    await page.goto('/')
+    await page.evaluate((cart) => {
+      localStorage.setItem('posa-rosa-cart', JSON.stringify(cart))
+      sessionStorage.removeItem('posa-rosa-fulfillment')
+    }, APPAREL_CART)
+
+    await page.goto('/shop?category=collection')
+    await page.getByTestId('emirate-Abu-Dhabi').click()
+
+    await expect(page.getByTestId('delivery-timing-badge')).toHaveText('48–72 hour delivery')
+    await expect(page.getByTestId('area-fee-info')).toContainText('AED 22')
+    await expect(page.getByText('Same-day delivery', { exact: true })).toHaveCount(0)
+  })
+})
