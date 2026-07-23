@@ -38,8 +38,20 @@ function corsHeaders(origin) {
   }
 }
 
+// ═══════════════════ TEST-ONLY (remove after AED-2 payment test) ═══════════════════
+// Cart of ONLY the product whose Shopify handle === TEST_PRODUCT_HANDLE gets zero
+// delivery fee so the total equals the product price. Remove this block + the
+// isTestOnlyCart call in computeDeliveryFee after testing. (grep "TEST-ONLY")
+const TEST_PRODUCT_HANDLE = 'test-product'
+function isTestOnlyCart(items) {
+  return Array.isArray(items) && items.length > 0 &&
+    items.every(i => i && i.handle === TEST_PRODUCT_HANDLE)
+}
+// ═══════════════════ END TEST-ONLY ═══════════════════
+
 // ── Delivery fee (mirrors create-order.js and client-side logic) ──────────────
 function computeDeliveryFee(emirate, items) {
+  if (isTestOnlyCart(items)) return 0   // TEST-ONLY
   const allApparel =
     Array.isArray(items) && items.length > 0 && items.every(i => i.isApparel === true)
   if (allApparel) return 22

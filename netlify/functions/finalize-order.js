@@ -76,8 +76,20 @@ function corsHeaders(origin) {
   }
 }
 
+// ═══════════════════ TEST-ONLY (remove after AED-2 payment test) ═══════════════════
+// Cart of ONLY the product whose Shopify handle === TEST_PRODUCT_HANDLE gets zero
+// delivery fee and skips delivery-detail validation. Remove this block + the
+// isTestOnlyCart call sites after testing. (grep "TEST-ONLY")
+const TEST_PRODUCT_HANDLE = 'test-product'
+function isTestOnlyCart(items) {
+  return Array.isArray(items) && items.length > 0 &&
+    items.every(i => i && i.handle === TEST_PRODUCT_HANDLE)
+}
+// ═══════════════════ END TEST-ONLY ═══════════════════
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function computeDeliveryFee(emirate, items) {
+  if (isTestOnlyCart(items)) return 0   // TEST-ONLY
   const allApparel =
     Array.isArray(items) && items.length > 0 && items.every(i => i.isApparel === true)
   if (allApparel) return 22
@@ -188,7 +200,8 @@ exports.handler = async (event) => {
       body: JSON.stringify({ error: 'Items required' }) }
   }
   const allApparel = items.every(i => i.isApparel === true)
-  if (!delivery?.address || !delivery?.area || (!allApparel && !delivery?.date)) {
+  // TEST-ONLY: the test product needs no delivery details.
+  if (!isTestOnlyCart(items) && (!delivery?.address || !delivery?.area || (!allApparel && !delivery?.date))) {
     return { statusCode: 422, headers: { ...CORS, 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'Delivery details required' }) }
   }
@@ -263,7 +276,9 @@ exports.handler = async (event) => {
       line_items: lineItems,
       customer:   { first_name: customer.name, email: customer.email, phone },
       shipping_address: {
-        name: customer.name, address1: delivery.address, city: emirate, country: 'AE', phone,
+        name: customer.name,
+        address1: delivery.address || 'TEST — no delivery required', // TEST-ONLY fallback for the test product
+        city: emirate, country: 'AE', phone,
       },
       financial_status: 'paid',
       note:             noteLines.filter(Boolean).join('\n'),
