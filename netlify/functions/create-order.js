@@ -50,21 +50,8 @@ function isRateLimited(ip) {
   return false
 }
 
-// ── Firebase ──────────────────────────────────────────────────────────────────
-const { initializeApp, getApps, getApp } = require('firebase/app')
-const { getFirestore, doc, setDoc }      = require('firebase/firestore/lite')
-
-const firebaseConfig = {
-  apiKey:            process.env.VITE_FIREBASE_API_KEY,
-  authDomain:        process.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId:         process.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket:     process.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId:             process.env.VITE_FIREBASE_APP_ID,
-}
-
-const fbApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()
-const db    = getFirestore(fbApp)
+// ── Firebase (Admin SDK — bypasses security rules, so they stay fully locked) ─
+const { db } = require('./lib/firebaseAdmin')
 
 // ── Shopify token ─────────────────────────────────────────────────────────────
 async function getShopifyToken() {
@@ -364,7 +351,7 @@ exports.handler = async (event) => {
       const subtotal = (items || []).reduce((sum, i) => sum + i.price * i.quantity, 0)
       const orderId  = String(shopifyData.order.order_number)
 
-      await setDoc(doc(db, 'orders', orderId), {
+      await db.collection('orders').doc(orderId).set({
         orderNumber:      orderId,
         shopifyOrderId:   shopifyData.order.id,
         status:           'Confirmed',

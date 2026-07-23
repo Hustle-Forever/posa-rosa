@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useCart } from '../context/CartContext'
-import { EMIRATE_AREAS, EMIRATES, getDeliveryFee, getFulfillment, TIME_SLOTS, slotClosedToday } from '../lib/fulfillment'
+import { EMIRATE_AREAS, EMIRATES, getDeliveryFee, getFulfillment, TIME_SLOTS, slotClosedToday, isTestOnlyCart } from '../lib/fulfillment'
 import { stripePromise } from '../lib/stripe'
 
 const STRIPE_APPEARANCE = {
@@ -182,7 +182,9 @@ export default function CheckoutPage() {
   const isFirstRender   = useRef(true)
 
   const allApparel  = items.length > 0 && items.every(i => i.isApparel)
-  const deliveryFee = allApparel ? 22 : getDeliveryFee(form.emirate)
+  // ═══ TEST-ONLY: cart of only the test product → zero delivery fee ═══
+  const testOnly    = isTestOnlyCart(items)
+  const deliveryFee = testOnly ? 0 : (allApparel ? 22 : getDeliveryFee(form.emirate))
   const orderTotal  = cartTotal + deliveryFee + giftCardTotal
   const areaOptions = EMIRATE_AREAS[form.emirate] || EMIRATE_AREAS['Abu Dhabi']
 
@@ -211,6 +213,7 @@ export default function CheckoutPage() {
   // Gate: all required fields filled (no visible errors — just readiness check)
   const formValid = useMemo(() => {
     if (!form.name.trim() || !form.phone.trim() || !form.email.trim()) return false
+    if (testOnly) return true   // ═══ TEST-ONLY: skip delivery-field validation ═══
     if (!form.emirate || !form.address.trim() || !form.area) return false
     if (form.area === 'Other' && !form.areaOther.trim()) return false
     if (!allApparel) {
@@ -218,7 +221,7 @@ export default function CheckoutPage() {
       if (form.emirate === 'Abu Dhabi' && !form.timeSlot) return false
     }
     return true
-  }, [form, allApparel])
+  }, [form, allApparel, testOnly])
 
   // Create PaymentIntent on mount; re-create (debounced 500ms) when total changes
   useEffect(() => {
@@ -243,6 +246,7 @@ export default function CheckoutPage() {
             quantity:   i.quantity,
             isApparel:  i.isApparel  || false,
             customItem: i.customItem || undefined,
+            handle:     i.handle     || null,   // TEST-ONLY: lets the server detect the test product
           })),
           emirate:          form.emirate,
           claimedTotal:     orderTotal,
@@ -306,6 +310,8 @@ export default function CheckoutPage() {
     if (!form.name.trim())  e.name  = 'Your name is required'
     if (!form.phone.trim()) e.phone = 'Phone number is required'
     if (!form.email.trim()) e.email = 'Email address is required'
+    // ═══ TEST-ONLY: skip delivery-field validation for the test product ═══
+    if (testOnly) { setErrors(e); return e }
     if (!form.emirate)                                         e.emirate   = 'Please select an emirate'
     if (!form.address.trim())                                  e.address   = 'Street address is required'
     if (!form.area)                                            e.area      = 'Please select your area'

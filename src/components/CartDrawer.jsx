@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '../context/CartContext'
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock'
-import { getFulfillment, getDeliveryFee } from '../lib/fulfillment'
+import { getFulfillment, getDeliveryFee, isTestOnlyCart } from '../lib/fulfillment'
 
 function GiftCardFlipCard() {
   const [flipped, setFlipped] = useState(false)
@@ -60,7 +60,8 @@ export default function CartDrawer() {
       lockBodyScroll()
       const saved     = getFulfillment()
       const allApparel = items.length > 0 && items.every(i => i.isApparel)
-      setDeliveryFee(allApparel ? 22 : getDeliveryFee(saved?.emirate))
+      // ═══ TEST-ONLY: cart of only the test product → zero delivery fee ═══
+      setDeliveryFee(isTestOnlyCart(items) ? 0 : (allApparel ? 22 : getDeliveryFee(saved?.emirate)))
       return unlockBodyScroll
     }
   }, [drawerOpen, items])

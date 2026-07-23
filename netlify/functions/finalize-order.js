@@ -1,7 +1,12 @@
 // POST /api/finalize-order
 // Verifies a Stripe PaymentIntent has succeeded, then creates the Shopify order
-// and writes to Firestore. Idempotent: repeated calls with the same
-// paymentIntentId return the same result without creating duplicate orders.
+// (the source of truth) and writes to Firestore best-effort. Idempotent: a
+// repeated call for the same paymentIntentId returns the same order without
+// creating a duplicate.
+//
+// Firestore is accessed via the Firebase ADMIN SDK (trusted server code that
+// bypasses security rules), so the rules stay fully locked. A Firestore failure
+// can never block the Shopify order — Shopify is created first, Firestore after.
 //
 // Body: { paymentIntentId, customer, delivery, items, total,
 //          giftCardQuantity?, giftCardTo?, giftCardFrom?, giftCardMessage? }
@@ -13,21 +18,8 @@ function getStripe() {
   return _stripe
 }
 
-// ── Firebase (same client SDK pattern as create-order.js) ────────────────────
-const { initializeApp, getApps, getApp } = require('firebase/app')
-const { getFirestore, doc, getDoc, setDoc } = require('firebase/firestore/lite')
-
-const firebaseConfig = {
-  apiKey:            process.env.VITE_FIREBASE_API_KEY,
-  authDomain:        process.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId:         process.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket:     process.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId:             process.env.VITE_FIREBASE_APP_ID,
-}
-
-const fbApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()
-const db    = getFirestore(fbApp)
+// ── Firestore (Admin SDK — bypasses security rules) ──────────────────────────
+const { db } = require('./lib/firebaseAdmin')
 
 // ── Shopify ───────────────────────────────────────────────────────────────────
 const SHOPIFY_STORE      = 'posa-rosa.myshopify.com'
@@ -84,8 +76,20 @@ function corsHeaders(origin) {
   }
 }
 
+// ═══════════════════ TEST-ONLY (remove after AED-2 payment test) ═══════════════════
+// Cart of ONLY the product whose Shopify handle === TEST_PRODUCT_HANDLE gets zero
+// delivery fee and skips delivery-detail validation. Remove this block + the
+// isTestOnlyCart call sites after testing. (grep "TEST-ONLY")
+const TEST_PRODUCT_HANDLE = 'test-product'
+function isTestOnlyCart(items) {
+  return Array.isArray(items) && items.length > 0 &&
+    items.every(i => i && i.handle === TEST_PRODUCT_HANDLE)
+}
+// ═══════════════════ END TEST-ONLY ═══════════════════
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function computeDeliveryFee(emirate, items) {
+  if (isTestOnlyCart(items)) return 0   // TEST-ONLY
   const allApparel =
     Array.isArray(items) && items.length > 0 && items.every(i => i.isApparel === true)
   if (allApparel) return 22
@@ -145,13 +149,17 @@ exports.handler = async (event) => {
       body: JSON.stringify({ error: 'Payment system not configured' }) }
   }
 
-  // ── Idempotency check ─────────────────────────────────────────────────────
-  const intentRef  = doc(db, 'pending_intents', paymentIntentId)
-  const intentSnap = await getDoc(intentRef)
+  const intentRef = db.collection('pending_intents').doc(paymentIntentId)
 
-  if (intentSnap.exists()) {
-    const state = intentSnap.data()
-    if (state.status === 'completed') {
+  // ── Idempotency fast-path (best-effort — must NEVER block order creation) ──
+  // A prior successful finalize marks this PI 'completed'; a page refresh then
+  // returns that same order instead of creating a duplicate. If Firestore is
+  // unreachable we log and continue — a rare duplicate is safer than losing
+  // the order entirely.
+  try {
+    const intentSnap = await intentRef.get()
+    if (intentSnap.exists && intentSnap.data().status === 'completed') {
+      const state = intentSnap.data()
       console.log('[finalize-order] idempotent return for %s orderNumber=%s', paymentIntentId, state.orderNumber)
       return {
         statusCode: 200,
@@ -164,11 +172,8 @@ exports.handler = async (event) => {
         }),
       }
     }
-    // If status === 'processing', another invocation is in-flight — reject
-    if (state.status === 'processing') {
-      return { statusCode: 409, headers: { ...CORS, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Order is being processed, please wait a moment and retry' }) }
-    }
+  } catch (err) {
+    console.error('[finalize-order] idempotency read failed (continuing to create order) pi=%s:', paymentIntentId, err.message)
   }
 
   // ── Verify PaymentIntent with Stripe ──────────────────────────────────────
@@ -195,7 +200,8 @@ exports.handler = async (event) => {
       body: JSON.stringify({ error: 'Items required' }) }
   }
   const allApparel = items.every(i => i.isApparel === true)
-  if (!delivery?.address || !delivery?.area || (!allApparel && !delivery?.date)) {
+  // TEST-ONLY: the test product needs no delivery details.
+  if (!isTestOnlyCart(items) && (!delivery?.address || !delivery?.area || (!allApparel && !delivery?.date))) {
     return { statusCode: 422, headers: { ...CORS, 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'Delivery details required' }) }
   }
@@ -223,9 +229,6 @@ exports.handler = async (event) => {
     return { statusCode: 422, headers: { ...CORS, 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'Order total does not match payment amount' }) }
   }
-
-  // ── Mark intent as processing (idempotency lock) ──────────────────────────
-  await setDoc(intentRef, { status: 'processing', startedAt: new Date().toISOString() })
 
   // ── Build Shopify line items ──────────────────────────────────────────────
   const lineItems = items.reduce((acc, i) => {
@@ -273,7 +276,9 @@ exports.handler = async (event) => {
       line_items: lineItems,
       customer:   { first_name: customer.name, email: customer.email, phone },
       shipping_address: {
-        name: customer.name, address1: delivery.address, city: emirate, country: 'AE', phone,
+        name: customer.name,
+        address1: delivery.address || 'TEST — no delivery required', // TEST-ONLY fallback for the test product
+        city: emirate, country: 'AE', phone,
       },
       financial_status: 'paid',
       note:             noteLines.filter(Boolean).join('\n'),
@@ -283,7 +288,7 @@ exports.handler = async (event) => {
     },
   }
 
-  // ── Create Shopify order ──────────────────────────────────────────────────
+  // ── Create Shopify order FIRST (source of truth) ──────────────────────────
   let shopifyData
   try {
     const token      = await getShopifyToken()
@@ -294,7 +299,7 @@ exports.handler = async (event) => {
     })
     shopifyData = await shopifyRes.json()
 
-    // Retry on phone-already-taken
+    // Retry on phone-already-taken (returning customer)
     if (!shopifyRes.ok && shopifyRes.status === 422 &&
         shopifyData?.errors?.['customer.phone_number']?.some(e => e.includes('already been taken'))) {
       const retry = { order: { ...orderBody.order, customer: { first_name: customer.name, email: customer.email } } }
@@ -307,62 +312,20 @@ exports.handler = async (event) => {
     }
 
     if (!shopifyRes.ok) {
-      console.error('[finalize-order] Shopify error %s pi=%s', shopifyRes.status, paymentIntentId)
-      // Reset idempotency lock so the client can retry
-      await setDoc(intentRef, { status: 'failed', failedAt: new Date().toISOString() }, { merge: true })
+      // Log the full error body — the field-level reason, not just the status.
+      console.error('[finalize-order] Shopify error %s pi=%s body=%s',
+        shopifyRes.status, paymentIntentId, JSON.stringify(shopifyData?.errors ?? shopifyData))
       return { statusCode: 502, headers: { ...CORS, 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'Could not place order — please contact us on WhatsApp' }) }
     }
   } catch (err) {
     console.error('[finalize-order] Shopify fetch error pi=%s:', paymentIntentId, err.message)
-    await setDoc(intentRef, { status: 'failed', failedAt: new Date().toISOString() }, { merge: true })
     return { statusCode: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'Network error — please try again' }) }
   }
 
   const orderNumber    = String(shopifyData.order.order_number)
   const shopifyOrderId = shopifyData.order.id
-
-  // ── Write to Firestore orders collection ──────────────────────────────────
-  try {
-    await setDoc(doc(db, 'orders', orderNumber), {
-      orderNumber,
-      shopifyOrderId,
-      status:             'Confirmed',
-      paymentIntentId,
-      paymentMethod:      'stripe',
-      customerName:       customer.name,
-      customerPhone:      phone,
-      customerEmail:      customer.email,
-      fulfillmentType:    'delivery',
-      emirate,
-      address:            delivery.address || '',
-      area:               delivery.area    || '',
-      deliveryDate:       delivery.date,
-      deliveryTimeSlot:   delivery.timeSlot  || '',
-      notes:              delivery.notes     || '',
-      googleMapsLink:     delivery.mapsLink  || '',
-      items: items.map(i => ({
-        title:         i.name || 'Mix Box (20 pcs)',
-        quantity:      i.quantity,
-        price:         i.price,
-        customItem:    i.customItem    || null,
-        mixBoxFlavors: i.mixBoxFlavors || null,
-      })),
-      deliveryFee,
-      subtotal,
-      giftCardQuantity,
-      giftCardTotal:   giftCardQuantity * 5,
-      giftCardTo,
-      giftCardFrom,
-      giftCardMessage,
-      total:           expectedTotal,
-      createdAt:       new Date().toISOString(),
-    })
-    console.log('[finalize-order] Firestore write OK order=%s pi=%s', orderNumber, paymentIntentId)
-  } catch (fsErr) {
-    console.error('[finalize-order] Firestore write failed (Shopify order still created) pi=%s:', paymentIntentId, fsErr.message)
-  }
 
   const orderSummary = {
     customerName:    customer.name,
@@ -385,22 +348,61 @@ exports.handler = async (event) => {
     address:         delivery.address  || '',
     area:            delivery.area     || '',
     emirate,
-    date:            delivery.date,
+    date:            delivery.date     || '',
     timeSlot:        delivery.timeSlot || '',
     notes:           delivery.notes    || '',
   }
 
-  // ── Mark idempotency doc as completed (store orderSummary for refresh) ─────
+  // ── Best-effort Firestore writes ──────────────────────────────────────────
+  // The order already exists in Shopify (the source of truth), so a Firestore
+  // failure must never fail the request or the confirmation screen.
   try {
-    await setDoc(intentRef, {
+    await db.collection('orders').doc(orderNumber).set({
+      orderNumber,
+      shopifyOrderId,
+      status:             'Confirmed',
+      paymentIntentId,
+      paymentMethod:      'stripe',
+      customerName:       customer.name,
+      customerPhone:      phone,
+      customerEmail:      customer.email,
+      fulfillmentType:    'delivery',
+      emirate,
+      address:            delivery.address || '',
+      area:               delivery.area    || '',
+      deliveryDate:       delivery.date    || '',
+      deliveryTimeSlot:   delivery.timeSlot  || '',
+      notes:              delivery.notes     || '',
+      googleMapsLink:     delivery.mapsLink  || '',
+      items: items.map(i => ({
+        title:         i.name || 'Mix Box (20 pcs)',
+        quantity:      i.quantity,
+        price:         i.price,
+        customItem:    i.customItem    || null,
+        mixBoxFlavors: i.mixBoxFlavors || null,
+      })),
+      deliveryFee,
+      subtotal,
+      giftCardQuantity,
+      giftCardTotal:   giftCardQuantity * 5,
+      giftCardTo,
+      giftCardFrom,
+      giftCardMessage,
+      total:           expectedTotal,
+      createdAt:       new Date().toISOString(),
+    })
+
+    await intentRef.set({
       status:         'completed',
       orderNumber,
       shopifyOrderId,
       completedAt:    new Date().toISOString(),
       orderSummary,
     }, { merge: true })
+
+    console.log('[finalize-order] Firestore write OK order=%s pi=%s', orderNumber, paymentIntentId)
   } catch (fsErr) {
-    console.error('[finalize-order] Could not mark pending_intent completed pi=%s:', paymentIntentId, fsErr.message)
+    console.error('[finalize-order] Firestore write failed (Shopify order still created) pi=%s:', paymentIntentId, fsErr.message)
   }
 
   return {

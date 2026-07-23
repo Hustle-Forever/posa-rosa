@@ -54,3 +54,17 @@ export function cartMode(items) {
   if (!items || items.length === 0) return 'empty'
   return items.every(i => i.isApparel) ? 'apparel' : 'truffle'
 }
+
+// ═══════════════════ TEST-ONLY (remove after AED-2 payment test) ═══════════════════
+// A single Shopify product whose URL handle is exactly TEST_PRODUCT_HANDLE is used
+// to test the payment → Shopify order flow with real money. When the cart contains
+// ONLY that product, delivery fee is 0 and delivery fields (address/area/date/time)
+// are not required, so the checkout total equals the product price (AED 2).
+// SAFE TO REMOVE: delete this block and every `isTestOnlyCart` call site — grep
+// "TEST-ONLY" across the repo. This affects no real product.
+export const TEST_PRODUCT_HANDLE = 'test-product'
+export function isTestOnlyCart(items) {
+  return Array.isArray(items) && items.length > 0 &&
+    items.every(i => i && i.handle === TEST_PRODUCT_HANDLE)
+}
+// ═══════════════════ END TEST-ONLY ═══════════════════

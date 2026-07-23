@@ -115,6 +115,7 @@ export default function OrderConfirmationPage() {
             isApparel:     i.isApparel    || false,
             mixBoxFlavors: i.mixBoxFlavors || undefined,
             customItem:    i.customItem   || undefined,
+            handle:        i.handle       || null,   // TEST-ONLY: lets the server detect the test product
           })),
           giftCardQuantity: giftCardQty   || 0,
           giftCardTo:       giftCardTo    || null,
